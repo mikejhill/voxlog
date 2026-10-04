@@ -17,6 +17,11 @@ internal fun Project.configureAndroidCommon(android: CommonExtension) {
         testOptions.unitTests.isIncludeAndroidResources = true
         testOptions.unitTests.isReturnDefaultValues = true
         testOptions.animationsDisabled = true
+        testOptions.unitTests.all { test ->
+            // Robolectric's shared-memory shim reflects into JDK internals on recent JDKs.
+            test.jvmArgs("--add-opens=java.base/jdk.internal.access=ALL-UNNAMED", "--add-exports=java.base/jdk.internal.access=ALL-UNNAMED")
+            test.maxHeapSize = "2g"
+        }
         lint.apply {
             warningsAsErrors = true
             abortOnError = true
@@ -33,6 +38,8 @@ internal fun Project.configureAndroidCommon(android: CommonExtension) {
         add("testImplementation", libs.libraryOf("truth"))
         add("testImplementation", libs.libraryOf("kotlinx-coroutines-test"))
         add("testImplementation", libs.libraryOf("turbine"))
+        add("testImplementation", libs.libraryOf("robolectric"))
+        add("testImplementation", libs.libraryOf("androidx-test-core"))
         add("androidTestImplementation", libs.libraryOf("androidx-test-ext-junit"))
         add("androidTestImplementation", libs.libraryOf("androidx-test-runner"))
         add("androidTestImplementation", libs.libraryOf("truth"))

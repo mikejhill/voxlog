@@ -27,6 +27,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.mikejhill.voxlog.core.designsystem.component.CategoryBadge
 import com.mikejhill.voxlog.core.designsystem.component.LabelTag
+import com.mikejhill.voxlog.core.designsystem.theme.LocalClock
 import com.mikejhill.voxlog.core.designsystem.theme.Spacing
 import com.mikejhill.voxlog.core.model.CaptureMethod
 import com.mikejhill.voxlog.core.model.Category
@@ -141,7 +142,7 @@ private fun MetadataRow(note: Note, category: Category?) {
             )
         }
         Text(
-            NoteFormatting.relativeTime(note.createdAt),
+            NoteFormatting.relativeTime(note.createdAt, LocalClock.current.millis()),
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.weight(1f, fill = false),

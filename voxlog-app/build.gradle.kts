@@ -82,3 +82,17 @@ dependencies {
     androidTestImplementation(libs.androidx.test.uiautomator)
     androidTestImplementation(libs.androidx.test.rules)
 }
+
+// Copies the light-theme screenshot baselines into the F-Droid/fastlane listing.
+// Run after `recordRoborazziDebug`; CI's metadata-guard job fails if the two drift apart.
+val generateStoreScreenshots by tasks.registering(Copy::class) {
+    group = "publishing"
+    description = "Renders key screens and copies them into fastlane/metadata as store screenshots."
+    dependsOn("recordRoborazziDebug")
+    from(layout.projectDirectory.dir("src/test/screenshots")) {
+        include("*_light.png")
+        exclude("x_*")
+    }
+    into(rootProject.layout.projectDirectory.dir("fastlane/metadata/android/en-US/images/phoneScreenshots"))
+    rename { it.removeSuffix("_light.png") + ".png" }
+}

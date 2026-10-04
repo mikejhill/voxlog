@@ -28,6 +28,7 @@ moduleGraphAssert {
             ":voxlog-engine:.* -> :voxlog-core:model",
             ":voxlog-core:.* -> :voxlog-core:.*",
             ":voxlog-core:data -> :voxlog-engine:.*",
+            ":voxlog-core:testing -> :voxlog-(core|engine):.*",
             ":voxlog-benchmark -> :voxlog-app",
         )
     restricted =
@@ -61,6 +62,22 @@ kover {
                     "*.BuildConfig",
                     "dagger.hilt.internal.*",
                     "hilt_aggregated_deps.*",
+                    // Device-only glue: needs real audio hardware, native libraries, the Keystore or
+                    // the system location stack. Covered by instrumented E2E tests and benchmarks instead.
+                    "*.CaptureActivity*",
+                    "*.MainActivity*",
+                    "*.RecordingService*",
+                    "*.WavRecorder*",
+                    "*.AacTranscoder*",
+                    "*.WhisperNative*",
+                    "*.WhisperSpeechTranscriber*",
+                    "*.OnnxTextEmbedder*",
+                    "*.PlatformLocationCapture*",
+                    "*.KeystoreSecretStore*",
+                    "*.AnthropicLlmClient*",
+                    "*.VoxLogApplication*",
+                    "*.ShortcutPublisher*",
+                    "*.ShortcutPinner*",
                 )
                 annotatedBy("androidx.compose.ui.tooling.preview.Preview", "javax.annotation.processing.Generated")
             }

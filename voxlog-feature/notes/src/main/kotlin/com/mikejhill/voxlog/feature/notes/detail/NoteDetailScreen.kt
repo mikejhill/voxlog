@@ -48,6 +48,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import com.mikejhill.voxlog.core.designsystem.component.CategoryChip
 import com.mikejhill.voxlog.core.designsystem.component.CategoryPickerSheet
+import com.mikejhill.voxlog.core.designsystem.theme.LocalClock
 import com.mikejhill.voxlog.core.designsystem.theme.Spacing
 import com.mikejhill.voxlog.core.designsystem.theme.VoxLogTheme
 import com.mikejhill.voxlog.core.model.CaptureMethod
@@ -259,10 +260,11 @@ private fun LabelsSection(state: NoteDetailUiState.Content, actions: NoteDetailA
 
 @Composable
 private fun MetadataSection(note: Note) {
+    val zone = LocalClock.current.zone
     Column(Modifier.padding(bottom = Spacing.huge), verticalArrangement = Arrangement.spacedBy(Spacing.extraSmall)) {
         Text(stringResource(R.string.notes_details), style = MaterialTheme.typography.titleSmall)
-        MetadataLine(R.string.notes_meta_created, NoteFormatting.fullDateTime(note.createdAt))
-        MetadataLine(R.string.notes_meta_updated, NoteFormatting.fullDateTime(note.updatedAt))
+        MetadataLine(R.string.notes_meta_created, NoteFormatting.fullDateTime(note.createdAt, zone))
+        MetadataLine(R.string.notes_meta_updated, NoteFormatting.fullDateTime(note.updatedAt, zone))
         MetadataLine(
             R.string.notes_meta_source,
             stringResource(

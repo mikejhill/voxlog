@@ -76,4 +76,4 @@ Compose:
     active: true
   CompositionLocalAllowlist:
     active: true
-    allowedCompositionLocals: LocalVoxLogSpacing
+    allowedCompositionLocals: LocalClock

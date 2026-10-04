@@ -22,7 +22,7 @@ object NoteFormatting {
     }
 
     /** "5 min. ago", "Yesterday", etc. */
-    fun relativeTime(instant: Instant, now: Long = System.currentTimeMillis()): String = DateUtils.getRelativeTimeSpanString(
+    fun relativeTime(instant: Instant, now: Long): String = DateUtils.getRelativeTimeSpanString(
         instant.toEpochMilli(),
         now,
         DateUtils.MINUTE_IN_MILLIS,
@@ -30,6 +30,6 @@ object NoteFormatting {
     ).toString()
 
     /** Full local date and time, e.g. "Oct 4, 2026, 8:15:00 AM". */
-    fun fullDateTime(instant: Instant, zone: ZoneId = ZoneId.systemDefault()): String =
+    fun fullDateTime(instant: Instant, zone: ZoneId): String =
         DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM).withZone(zone).format(instant)
 }

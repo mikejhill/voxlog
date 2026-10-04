@@ -14,14 +14,20 @@ import com.mikejhill.voxlog.core.model.NoteStatus
 import com.mikejhill.voxlog.core.model.TitleSource
 import com.mikejhill.voxlog.feature.notes.list.NotesListActions
 import com.mikejhill.voxlog.feature.notes.list.NotesListUiState
+import java.time.Clock
 import java.time.Instant
+import java.time.ZoneOffset
 
 /**
  * Realistic sample content for Compose previews, screenshot tests and the auto-generated store
  * screenshots. Kept deterministic so screenshots are stable.
  */
 object SampleNotes {
-    private val now: Instant = Instant.parse("2026-10-04T14:30:00Z")
+    /** The instant sample notes are relative to; previews and screenshots render "now" as this. */
+    val now: Instant = Instant.parse("2026-10-04T14:30:00Z")
+
+    /** A clock frozen at [now] in a fixed UTC-5 zone, for deterministic rendering. */
+    val clock: Clock = Clock.fixed(now, ZoneOffset.ofHours(-5))
 
     /** Sample categories, including the system category. */
     val categories: List<Category> = listOf(

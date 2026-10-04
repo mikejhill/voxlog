@@ -8,5 +8,10 @@ dependencies {
 
 tasks.test {
     // Konsist scans sources, so the task must rerun whenever any module's sources change.
-    inputs.files(fileTree(rootDir) { include("voxlog-*/**/src/**/*.kt") })
+    inputs.files(
+        fileTree(rootDir) {
+            include("voxlog-*/**/src/**/*.kt")
+            exclude("**/build/**")
+        },
+    ).withPropertyName("konsistSources")
 }

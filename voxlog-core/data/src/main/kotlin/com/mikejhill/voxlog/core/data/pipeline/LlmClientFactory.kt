@@ -10,12 +10,19 @@ import com.mikejhill.voxlog.engine.llm.OpenAiCompatibleLlmClient
 import javax.inject.Inject
 
 /** Builds the [LlmClient] for the configured provider, or null when post-processing is off. */
-class LlmClientFactory @Inject constructor(private val secretStore: SecretStore) {
+interface LlmClientFactory {
     /** Returns a client for [settings], or null if no provider is configured or a required key is missing. */
-    suspend fun create(settings: AppSettings): LlmClient? = build(settings, settings.postProcessing.model.ifBlank { null })
+    suspend fun create(settings: AppSettings): LlmClient?
 
     /** Returns a client usable only for [LlmClient.listModels], before a model has been chosen. */
-    suspend fun createForModelListing(settings: AppSettings): LlmClient? =
+    suspend fun createForModelListing(settings: AppSettings): LlmClient?
+}
+
+/** [LlmClientFactory] that reads the API key from the encrypted [SecretStore]. */
+class SecretStoreLlmClientFactory @Inject constructor(private val secretStore: SecretStore) : LlmClientFactory {
+    override suspend fun create(settings: AppSettings): LlmClient? = build(settings, settings.postProcessing.model.ifBlank { null })
+
+    override suspend fun createForModelListing(settings: AppSettings): LlmClient? =
         build(settings, settings.postProcessing.model.ifBlank { LISTING_PLACEHOLDER_MODEL })
 
     private suspend fun build(settings: AppSettings, model: String?): LlmClient? {

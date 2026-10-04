@@ -4,7 +4,6 @@ import com.android.build.api.dsl.LibraryExtension
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.kotlin.dsl.configure
-import org.gradle.kotlin.dsl.dependencies
 
 /** Base convention for every Android library module (`voxlog.android.library`). */
 class AndroidLibraryConventionPlugin : Plugin<Project> {
@@ -16,10 +15,6 @@ class AndroidLibraryConventionPlugin : Plugin<Project> {
                 namespace = namespaceFor(path)
                 testOptions.targetSdk = libs.versionOf("targetSdk").toInt()
                 lint.targetSdk = libs.versionOf("targetSdk").toInt()
-            }
-            dependencies {
-                add("testImplementation", libs.libraryOf("robolectric"))
-                add("testImplementation", libs.libraryOf("androidx-test-core"))
             }
             configureQuality()
         }

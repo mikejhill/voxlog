@@ -9,7 +9,9 @@ import com.mikejhill.voxlog.core.data.database.dao.NoteDao
 import com.mikejhill.voxlog.core.data.database.dao.SearchDao
 import com.mikejhill.voxlog.core.data.location.LocationCapture
 import com.mikejhill.voxlog.core.data.location.PlatformLocationCapture
+import com.mikejhill.voxlog.core.data.pipeline.LlmClientFactory
 import com.mikejhill.voxlog.core.data.pipeline.NoteProcessingScheduler
+import com.mikejhill.voxlog.core.data.pipeline.SecretStoreLlmClientFactory
 import com.mikejhill.voxlog.core.data.pipeline.WorkManagerNoteProcessingScheduler
 import com.mikejhill.voxlog.core.data.repository.CategoryRepository
 import com.mikejhill.voxlog.core.data.repository.LabelRepository
@@ -112,6 +114,10 @@ interface DataBindingsModule {
     /** Location. */
     @Binds
     fun bindLocationCapture(capture: PlatformLocationCapture): LocationCapture
+
+    /** LLM client construction. */
+    @Binds
+    fun bindLlmClientFactory(factory: SecretStoreLlmClientFactory): LlmClientFactory
 
     /** Background processing. */
     @Binds
