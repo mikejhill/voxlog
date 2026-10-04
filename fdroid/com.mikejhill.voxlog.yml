@@ -1,8 +1,9 @@
 # F-Droid metadata for https://gitlab.com/fdroid/fdroiddata (metadata/com.mikejhill.voxlog.yml).
 # Validated in CI by the fdroid-metadata job. See docs/release-runbook.md for the submission steps.
 Categories:
-  - Writing
-  - Multimedia
+  - Note
+  - Recorder
+  - Speech Recognizer
 License: Apache-2.0
 AuthorName: Mike Hill
 WebSite: https://github.com/mikejhill/voxlog

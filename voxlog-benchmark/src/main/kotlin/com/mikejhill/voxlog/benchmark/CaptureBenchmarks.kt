@@ -10,7 +10,6 @@ import androidx.benchmark.macro.TraceSectionMetric
 import androidx.benchmark.macro.junit4.MacrobenchmarkRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.uiautomator.By
-import androidx.test.uiautomator.Direction
 import androidx.test.uiautomator.Until
 import org.junit.FixMethodOrder
 import org.junit.Rule
@@ -65,7 +64,7 @@ class CaptureBenchmarks {
             device.wait(Until.hasObject(By.text("Recording")), TIMEOUT_MILLIS)
         },
     ) {
-        device.findObject(By.desc("Stop and save"))?.click()
+        device.wait(Until.findObject(By.res("stopButton")), TIMEOUT_MILLIS)?.click()
         device.wait(Until.hasObject(By.text("Saved")), TIMEOUT_MILLIS)
     }
 
@@ -91,9 +90,13 @@ class CaptureBenchmarks {
             startActivityAndWait()
         },
     ) {
-        val list = device.wait(Until.findObject(By.res("notesList")), TIMEOUT_MILLIS) ?: return@measureRepeated
-        list.setGestureMargin(device.displayWidth / GESTURE_MARGIN_DIVISOR)
-        repeat(SCROLLS) { list.fling(Direction.DOWN) }
+        device.wait(Until.hasObject(By.res("notesList")), TIMEOUT_MILLIS)
+        // Coordinate swipes avoid stale node references while the list recomposes.
+        val x = device.displayWidth / 2
+        repeat(SCROLLS) {
+            device.swipe(x, device.displayHeight * SWIPE_FROM / PERCENT, x, device.displayHeight * SWIPE_TO / PERCENT, SWIPE_STEPS)
+            device.waitForIdle()
+        }
     }
 
     /** Creates enough text notes to make the list scrollable; runs only when the list is short. */
@@ -132,7 +135,10 @@ class CaptureBenchmarks {
         const val ITERATIONS = 10
         const val TIMEOUT_MILLIS = 5_000L
         const val SCROLLS = 5
-        const val GESTURE_MARGIN_DIVISOR = 5
+        const val SWIPE_FROM = 80
+        const val SWIPE_TO = 20
+        const val PERCENT = 100
+        const val SWIPE_STEPS = 10
         const val MIN_VISIBLE_CARDS = 3
         const val SEEDED_NOTES = 25
     }

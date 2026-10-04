@@ -28,7 +28,7 @@ class BaselineProfileGenerator {
         device.pressBack()
         startActivityAndWait(Intent("com.mikejhill.voxlog.action.RECORD_VOICE").setPackage(PACKAGE).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
         device.wait(Until.hasObject(By.text("Recording")), TIMEOUT_MILLIS)
-        device.findObject(By.desc("Stop and save"))?.click()
+        device.wait(Until.findObject(By.res("stopButton")), TIMEOUT_MILLIS)?.click()
         device.wait(Until.hasObject(By.text("Saved")), TIMEOUT_MILLIS)
     }
 

@@ -128,5 +128,7 @@ jobs:
         run: python3 scripts/check_store_metadata.py
       - name: Lint the F-Droid recipe
         run: |
-          docker run --rm -v "$PWD/fdroid:/repo/metadata:ro" -w /repo registry.gitlab.com/fdroid/fdroidserver:buildserver \
-            bash -c 'printf "repo_url: https://example.invalid/repo\n" > config.yml && fdroid lint com.mikejhill.voxlog'
+          pipx install fdroidserver
+          mkdir -p /tmp/fdroid/metadata /tmp/fdroid/config && cp fdroid/*.yml /tmp/fdroid/metadata/
+          curl -sfL https://gitlab.com/fdroid/fdroiddata/-/raw/master/config/categories.yml | grep -v "^  icon:" > /tmp/fdroid/config/categories.yml
+          cd /tmp/fdroid && fdroid lint com.mikejhill.voxlog

@@ -36,6 +36,7 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /**
  * Foreground service (type `microphone`) that owns the recorder, so recording continues with the
@@ -83,27 +84,18 @@ class RecordingService : Service() {
         return START_NOT_STICKY
     }
 
-    private fun start(requestedCategoryId: CategoryId?, shortcutId: String?) = trace(TRACE_START) {
-        if (recorder != null) return@trace
+    private fun start(requestedCategoryId: CategoryId?, shortcutId: String?) {
+        if (recorder != null) return
         val noteId = NoteId.random()
+        // The microphone opens first: the capture activity is in the foreground, so recording is
+        // allowed before the service is promoted, and nothing else delays the first audio sample.
+        val wavRecorder = trace(TRACE_START) { openMicrophone(noteId) }
         ServiceCompat.startForeground(this, NOTIFICATION_ID, buildNotification(), ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE)
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
-            failAndStop(getString(R.string.capture_error_permission))
-            return@trace
-        }
-        val wavRecorder = WavRecorder(noteRepository.recordingFileFor(noteId))
-        try {
-            wavRecorder.start()
-        } catch (exception: IllegalStateException) {
-            failAndStop(exception.message ?: getString(R.string.capture_error_microphone))
-            return@trace
-        }
+        if (wavRecorder == null) return
         recorder = wavRecorder
         activeNoteId = noteId
         val initialCategoryId = requestedCategoryId ?: CategoryId.UNCATEGORIZED
-        stateHolder.update {
-            RecordingState.Recording(noteId, initialCategoryId, SystemClock.elapsedRealtime(), 0f, remainingStorageMinutes())
-        }
+        stateHolder.update { RecordingState.Recording(noteId, initialCategoryId, SystemClock.elapsedRealtime(), 0f, Long.MAX_VALUE) }
         // Persist the RECORDING row in parallel with capture; the mic is already live.
         persistJob = scope.launch(Dispatchers.IO) {
             val categoryId = requestedCategoryId ?: settingsRepository.current().defaultCategory
@@ -115,10 +107,27 @@ class RecordingService : Service() {
         monitorJob = scope.launch { monitor(wavRecorder) }
     }
 
+    /** Opens the microphone, or reports why it could not and returns null. */
+    private fun openMicrophone(noteId: NoteId): WavRecorder? {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+            reportFailure(getString(R.string.capture_error_permission))
+            return null
+        }
+        val wavRecorder = WavRecorder(noteRepository.recordingFileFor(noteId))
+        return try {
+            wavRecorder.start()
+            wavRecorder
+        } catch (exception: IllegalStateException) {
+            reportFailure(exception.message ?: getString(R.string.capture_error_microphone))
+            null
+        }
+    }
+
     private suspend fun monitor(wavRecorder: WavRecorder) {
         launchLevelCollector(wavRecorder)
         while (scope.isActive) {
-            val minutesLeft = remainingStorageMinutes()
+            // Off the start path: computing allocatable storage can take tens of milliseconds.
+            val minutesLeft = withContext(Dispatchers.IO) { remainingStorageMinutes() }
             stateHolder.update { (it as? RecordingState.Recording)?.copy(remainingStorageMinutes = minutesLeft) ?: it }
             if (audioFileStore.availableBytes() < MINIMUM_FREE_BYTES) {
                 stop()
@@ -164,9 +173,10 @@ class RecordingService : Service() {
         }
     }
 
-    private fun failAndStop(reason: String) {
+    private fun reportFailure(reason: String) {
         stateHolder.update { RecordingState.Failed(reason) }
-        finish()
+        // Stop after startForeground() has run, as Android requires for foreground-service starts.
+        scope.launch { finish() }
     }
 
     private fun finish() {
