@@ -2,6 +2,7 @@ package com.mikejhill.voxlog.buildlogic
 
 import com.diffplug.gradle.spotless.SpotlessExtension
 import dev.detekt.gradle.extensions.DetektExtension
+import kotlinx.kover.gradle.plugin.dsl.KoverProjectExtension
 import org.gradle.api.Project
 import org.gradle.kotlin.dsl.configure
 import org.gradle.kotlin.dsl.dependencies
@@ -15,6 +16,14 @@ internal fun Project.configureQuality() {
     pluginManager.apply("dev.detekt")
     pluginManager.apply("org.jetbrains.kotlinx.kover")
     pluginManager.apply("org.jetbrains.dokka")
+
+    extensions.configure<KoverProjectExtension> {
+        currentProject {
+            listOf("data", "model", "llm").forEach { module ->
+                createVariant(module) { add("debug", "jvm", optional = true) }
+            }
+        }
+    }
 
     val ktlintVersion = libs.versionOf("ktlint")
     extensions.configure<SpotlessExtension> {

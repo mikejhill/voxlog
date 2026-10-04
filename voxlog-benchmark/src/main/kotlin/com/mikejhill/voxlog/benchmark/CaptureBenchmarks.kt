@@ -1,6 +1,7 @@
 package com.mikejhill.voxlog.benchmark
 
 import android.content.Intent
+import android.os.Build
 import androidx.benchmark.macro.ExperimentalMetricApi
 import androidx.benchmark.macro.FrameTimingMetric
 import androidx.benchmark.macro.MacrobenchmarkScope
@@ -10,7 +11,12 @@ import androidx.benchmark.macro.TraceSectionMetric
 import androidx.benchmark.macro.junit4.MacrobenchmarkRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.uiautomator.By
+import androidx.test.uiautomator.BySelector
+import androidx.test.uiautomator.Configurator
+import androidx.test.uiautomator.StaleObjectException
+import androidx.test.uiautomator.UiObject2
 import androidx.test.uiautomator.Until
+import org.junit.Assume.assumeFalse
 import org.junit.FixMethodOrder
 import org.junit.Rule
 import org.junit.Test
@@ -48,9 +54,9 @@ class CaptureBenchmarks {
         },
     ) {
         startActivityAndWait(captureIntent(ACTION_RECORD_VOICE))
-        device.wait(Until.hasObject(By.text("Recording")), TIMEOUT_MILLIS)
-        device.findObject(By.text("Discard"))?.click()
-        device.wait(Until.gone(By.text("Recording")), TIMEOUT_MILLIS)
+        check(device.wait(Until.hasObject(By.text("Recording").pkg(TARGET_PACKAGE)), TIMEOUT_MILLIS))
+        withFreshObject(By.text("Discard").pkg(TARGET_PACKAGE)) { it.click() }
+        check(device.wait(Until.gone(By.text("Recording").pkg(TARGET_PACKAGE)), TIMEOUT_MILLIS))
     }
 
     @Test
@@ -60,12 +66,21 @@ class CaptureBenchmarks {
         iterations = ITERATIONS,
         setupBlock = {
             grantRecordAudio()
+            forceStop()
             startActivityAndWait(captureIntent(ACTION_RECORD_VOICE))
-            device.wait(Until.hasObject(By.text("Recording")), TIMEOUT_MILLIS)
+            check(device.wait(Until.hasObject(By.text("Recording").pkg(TARGET_PACKAGE)), TIMEOUT_MILLIS))
         },
     ) {
-        device.wait(Until.findObject(By.res("stopButton")), TIMEOUT_MILLIS)?.click()
-        device.wait(Until.hasObject(By.text("Saved")), TIMEOUT_MILLIS)
+        // Saved auto-closes after 1.5 seconds; waiting for accessibility idle can miss it entirely.
+        val configurator = Configurator.getInstance()
+        val previousTimeout = configurator.waitForIdleTimeout
+        configurator.waitForIdleTimeout = 0
+        try {
+            withFreshObject(By.res("stopButton").pkg(TARGET_PACKAGE)) { it.click() }
+            check(device.wait(Until.hasObject(By.text("Saved").pkg(TARGET_PACKAGE)), TIMEOUT_MILLIS))
+        } finally {
+            configurator.waitForIdleTimeout = previousTimeout
+        }
     }
 
     @Test
@@ -80,7 +95,15 @@ class CaptureBenchmarks {
     }
 
     @Test
-    fun c_notesListScroll() = rule.measureRepeated(
+    fun c_notesListScroll() {
+        assumeFalse(
+            "FrameTimingMetric requires frame timeline data unavailable on ranchu/goldfish software emulators",
+            Build.HARDWARE.contains("ranchu") || Build.HARDWARE.contains("goldfish"),
+        )
+        measureNotesListScroll()
+    }
+
+    private fun measureNotesListScroll() = rule.measureRepeated(
         packageName = TARGET_PACKAGE,
         metrics = listOf(FrameTimingMetric()),
         iterations = ITERATIONS,
@@ -90,7 +113,7 @@ class CaptureBenchmarks {
             startActivityAndWait()
         },
     ) {
-        device.wait(Until.hasObject(By.res("notesList")), TIMEOUT_MILLIS)
+        check(device.wait(Until.hasObject(By.res("notesList").pkg(TARGET_PACKAGE)), TIMEOUT_MILLIS))
         // Coordinate swipes avoid stale node references while the list recomposes.
         val x = device.displayWidth / 2
         repeat(SCROLLS) {
@@ -102,14 +125,26 @@ class CaptureBenchmarks {
     /** Creates enough text notes to make the list scrollable; runs only when the list is short. */
     private fun MacrobenchmarkScope.seedNotes() {
         startActivityAndWait()
-        if (device.findObjects(By.res("noteCard")).size >= MIN_VISIBLE_CARDS) return
+        if (device.findObjects(By.res("noteCard").pkg(TARGET_PACKAGE)).size >= MIN_VISIBLE_CARDS) return
         repeat(SEEDED_NOTES) { index ->
             startActivityAndWait(captureIntent(ACTION_WRITE_TEXT))
-            device.wait(Until.hasObject(By.res("bodyField")), TIMEOUT_MILLIS)
-            device.waitForIdle()
-            device.findObject(By.res("bodyField"))?.text = "Benchmark note $index with enough text to fill a card."
-            device.findObject(By.res("saveTextNote"))?.click()
-            device.wait(Until.gone(By.res("saveTextNote")), TIMEOUT_MILLIS)
+            withFreshObject(By.res("bodyField").pkg(TARGET_PACKAGE)) {
+                it.text = "Benchmark note $index with enough text to fill a card."
+            }
+            withFreshObject(By.res("saveTextNote").pkg(TARGET_PACKAGE).enabled(true)) { it.click() }
+            check(device.wait(Until.gone(By.res("saveTextNote").pkg(TARGET_PACKAGE)), TIMEOUT_MILLIS))
+        }
+    }
+
+    /** Reacquires Compose nodes when recomposition invalidates an accessibility reference. */
+    private fun MacrobenchmarkScope.withFreshObject(selector: BySelector, action: (UiObject2) -> Unit) {
+        repeat(NODE_ATTEMPTS) { attempt ->
+            try {
+                action(checkNotNull(device.wait(Until.findObject(selector), TIMEOUT_MILLIS)) { "Missing UI node: $selector" })
+                return
+            } catch (exception: StaleObjectException) {
+                if (attempt == NODE_ATTEMPTS - 1) throw exception
+            }
         }
     }
 
@@ -126,7 +161,9 @@ class CaptureBenchmarks {
         device.executeShellCommand("pm grant $TARGET_PACKAGE android.permission.POST_NOTIFICATIONS")
     }
 
-    private fun captureIntent(action: String) = Intent(action).setPackage(TARGET_PACKAGE).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+    private fun captureIntent(action: String) = Intent(action)
+        .setClassName(TARGET_PACKAGE, "$TARGET_PACKAGE.feature.capture.CaptureActivity")
+        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
 
     private companion object {
         const val TARGET_PACKAGE = "com.mikejhill.voxlog"
@@ -141,5 +178,6 @@ class CaptureBenchmarks {
         const val SWIPE_STEPS = 10
         const val MIN_VISIBLE_CARDS = 3
         const val SEEDED_NOTES = 25
+        const val NODE_ATTEMPTS = 3
     }
 }

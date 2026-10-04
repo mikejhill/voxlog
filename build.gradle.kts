@@ -49,6 +49,12 @@ dependencies {
 }
 
 kover {
+    // Aggregate debug/JVM tests so module gates count real repository use in feature tests too.
+    currentProject {
+        listOf("data", "model", "llm").forEach { module ->
+            createVariant(module) {}
+        }
+    }
     reports {
         filters {
             excludes {
@@ -87,5 +93,19 @@ kover {
                 minBound(60)
             }
         }
+        mapOf("data" to "core.data", "model" to "core.model", "llm" to "engine.llm").forEach { (module, packageName) ->
+            variant(module) {
+                filtersAppend {
+                    includes { packages("com.mikejhill.voxlog.$packageName", "com.mikejhill.voxlog.$packageName.*") }
+                }
+                verify {
+                    rule("$module line coverage") { minBound(70) }
+                }
+            }
+        }
     }
+}
+
+tasks.named("koverVerify") {
+    dependsOn("koverVerifyData", "koverVerifyModel", "koverVerifyLlm")
 }

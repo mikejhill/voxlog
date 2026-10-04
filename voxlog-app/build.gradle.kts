@@ -71,6 +71,10 @@ android.buildTypes.matching { it.name.startsWith("benchmark") || it.name.startsW
     signingConfig = android.signingConfigs.getByName("debug")
 }
 
+baselineProfile {
+    mergeIntoMain = true
+}
+
 dependencies {
     implementation(projects.voxlogCore.model)
     implementation(projects.voxlogCore.data)

@@ -64,7 +64,9 @@ Configured in `config/detekt/detekt.yml`:
 
 Kover aggregates all modules at the root. Generated code (Hilt, Room, Compose singletons, previews)
 and device-only glue (activities, services, the recorder, native JNI wrappers) are excluded; the
-device-only glue is exercised by the instrumented E2E tests instead. The gate is in `build.gradle.kts`.
+device-only glue is exercised by the instrumented E2E tests instead. The gates are in `build.gradle.kts`:
+60% overall and 70% each for `core/data`, `core/model` and `engine/llm`. Module gates aggregate debug
+and JVM tests, including feature tests that exercise real repositories, and retain the same exclusions.
 
 ## Performance budgets
 
@@ -77,9 +79,21 @@ Measured with Macrobenchmark through trace sections in the production code:
 | Text shortcut, cold start → composer | `timeToInitialDisplayMs` | ≤ 400 ms |
 | Notes list scroll | janky frame ratio | < 1% |
 
-Latest local run (x86_64 emulator, software rendering, not representative of phones):
-microphone start trace 263–590 ms, stop→saved 51–69 ms, cold-start time to initial display 0.66–1.8 s.
-The stop path is within budget; startup numbers must be validated on a physical arm64 device
+Latest local run (2026-10-04, API 36 x86_64 emulator, software rendering, generated baseline profiles;
+not representative of phones), medians over ten iterations:
+
+| Metric | Emulator median |
+|---|---|
+| Microphone start trace | 115.1 ms |
+| Stop audio finalization trace | 64.8 ms |
+| Voice shortcut cold-start initial display | 1,180.1 ms |
+| Text shortcut cold-start initial display | 982.8 ms |
+
+Every stop iteration emitted exactly one positive-duration trace and reached `Saved`. The stop trace
+measures audio finalization; the benchmark also waits for persistence to finish and the Saved screen.
+Notes list scrolling was skipped with JUnit Assume because ranchu software rendering lacks frame
+timeline data. Both startup display medians exceed the current emulator limits (1,000/800 ms), so
+`scripts/check_benchmarks.py` fails this run. Startup numbers must be validated on a physical arm64 device
 (`./gradlew :voxlog-benchmark:connectedBenchmarkReleaseAndroidTest` with a phone attached) before
 tightening `EMULATOR_TOLERANCE` in `scripts/check_benchmarks.py`.
 

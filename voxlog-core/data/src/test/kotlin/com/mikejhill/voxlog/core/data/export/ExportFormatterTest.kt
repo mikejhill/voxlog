@@ -68,4 +68,16 @@ class ExportFormatterTest {
         assertThat(FolderSyncer.relativePathFor(note)).isEqualTo("2026/10/2026-10-04-grocery-list-urgent-1a2b3c4d.md")
         assertThat(FolderSyncer.relativePathFor(note.copy(title = "!!!"))).isEqualTo("2026/10/2026-10-04-note-1a2b3c4d.md")
     }
+
+    @Test
+    fun `sync slugs cannot escape folders and trim separators after truncation`() {
+        assertThat(FolderSyncer.relativePathFor(note.copy(title = "../../HELLO\\world")))
+            .isEqualTo("2026/10/2026-10-04-hello-world-1a2b3c4d.md")
+        assertThat(FolderSyncer.relativePathFor(note.copy(title = "a".repeat(39) + " long title")))
+            .isEqualTo("2026/10/2026-10-04-${"a".repeat(39)}-1a2b3c4d.md")
+        assertThat(FolderSyncer.relativePathFor(note.copy(title = "日本語", id = "abc")))
+            .isEqualTo("2026/10/2026-10-04-note-abc.md")
+        assertThat(FolderSyncer.relativePathFor(note.copy(title = "A".repeat(60))))
+            .isEqualTo("2026/10/2026-10-04-${"a".repeat(40)}-1a2b3c4d.md")
+    }
 }
