@@ -1,0 +1,23 @@
+# Gradle / build
+.gradle/
+build/
+.kotlin/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# Machine-specific
+local.properties
+*.keystore
+*.jks
+keystore.properties
+
+# Native build
+.cxx/
+.externalNativeBuild/
+
+# OS
+.DS_Store
+Thumbs.db

@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Static launcher shortcuts. Debug builds override this file with the .debug package. -->
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:shortcutId="voice"
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_record"
+        android:shortcutShortLabel="@string/shortcut_voice_short"
+        android:shortcutLongLabel="@string/shortcut_voice_long">
+        <intent
+            android:action="com.mikejhill.voxlog.action.RECORD_VOICE"
+            android:targetClass="com.mikejhill.voxlog.feature.capture.CaptureActivity"
+            android:targetPackage="com.mikejhill.voxlog.debug">
+            <extra android:name="com.mikejhill.voxlog.extra.SHORTCUT_ID" android:value="voice" />
+        </intent>
+    </shortcut>
+    <shortcut
+        android:shortcutId="text"
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_write"
+        android:shortcutShortLabel="@string/shortcut_text_short"
+        android:shortcutLongLabel="@string/shortcut_text_long">
+        <intent
+            android:action="com.mikejhill.voxlog.action.WRITE_TEXT"
+            android:targetClass="com.mikejhill.voxlog.feature.capture.CaptureActivity"
+            android:targetPackage="com.mikejhill.voxlog.debug">
+            <extra android:name="com.mikejhill.voxlog.extra.SHORTCUT_ID" android:value="text" />
+        </intent>
+    </shortcut>
+</shortcuts>

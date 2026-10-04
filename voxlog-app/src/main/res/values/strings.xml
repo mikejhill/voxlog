@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">VoxLog</string>
+    <string name="shortcut_voice_short">Voice note</string>
+    <string name="shortcut_voice_long">Record a voice note</string>
+    <string name="shortcut_text_short">Text note</string>
+    <string name="shortcut_text_long">Write a text note</string>
+    <string name="shortcut_record_into">Record into %1$s</string>
+</resources>

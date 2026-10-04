@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="search_hint">Search notes</string>
+    <string name="search_back">Back</string>
+    <string name="search_clear">Clear</string>
+    <string name="search_all">All</string>
+    <string name="search_text_matches">Matches</string>
+    <string name="search_related">Related notes</string>
+    <string name="search_no_results_title">No results</string>
+    <string name="search_no_results_message">Try different words. Related notes appear once the search model has downloaded.</string>
+</resources>

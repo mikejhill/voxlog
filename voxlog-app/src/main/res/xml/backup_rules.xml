@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android 11 and below. Models are re-downloadable and excluded to keep backups small. -->
+<full-backup-content>
+    <include domain="database" path="voxlog.db" />
+    <include domain="file" path="audio/" />
+    <include domain="file" path="datastore/" />
+</full-backup-content>

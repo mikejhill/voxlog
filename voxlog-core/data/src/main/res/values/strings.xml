@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="processing_channel_name">Note processing</string>
+    <string name="processing_channel_description">Progress while recordings are transcribed and notes are processed</string>
+    <string name="transcribing_title">Transcribing voice note…</string>
+</resources>
