@@ -32,7 +32,7 @@ Builds:
 
 # SHA-256 of the release signing certificate (lowercase, no colons). F-Droid only publishes when its
 # build reproduces our APK byte-for-byte, and then ships our signed APK.
-AllowedAPKSigningKeys: 0000000000000000000000000000000000000000000000000000000000000000
+AllowedAPKSigningKeys: dcb33ef53b9ea299eae98e3d4d548a09b076b1d013cf3f6818ec50307149af50
 
 AutoUpdateMode: Version
 UpdateCheckMode: Tags
