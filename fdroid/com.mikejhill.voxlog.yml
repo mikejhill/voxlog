@@ -1,0 +1,40 @@
+# F-Droid metadata for https://gitlab.com/fdroid/fdroiddata (metadata/com.mikejhill.voxlog.yml).
+# Validated in CI by the fdroid-metadata job. See docs/release-runbook.md for the submission steps.
+Categories:
+  - Writing
+  - Multimedia
+License: Apache-2.0
+AuthorName: Mike Hill
+WebSite: https://github.com/mikejhill/voxlog
+SourceCode: https://github.com/mikejhill/voxlog
+IssueTracker: https://github.com/mikejhill/voxlog/issues
+Changelog: https://github.com/mikejhill/voxlog/releases
+
+AutoName: VoxLog
+
+RepoType: git
+Repo: https://github.com/mikejhill/voxlog.git
+Binaries: https://github.com/mikejhill/voxlog/releases/download/v%v/voxlog-%v.apk
+
+Builds:
+  - versionName: 0.1.0
+    versionCode: 100
+    commit: v0.1.0
+    subdir: voxlog-app
+    submodules: true
+    sudo:
+      - apt-get update
+      - apt-get install -y -t stable openjdk-21-jdk-headless
+      - update-java-alternatives -a
+    gradle:
+      - release
+    ndk: 29.0.14206865
+
+# SHA-256 of the release signing certificate (lowercase, no colons). F-Droid only publishes when its
+# build reproduces our APK byte-for-byte, and then ships our signed APK.
+AllowedAPKSigningKeys: 0000000000000000000000000000000000000000000000000000000000000000
+
+AutoUpdateMode: Version
+UpdateCheckMode: Tags
+CurrentVersion: 0.1.0
+CurrentVersionCode: 100

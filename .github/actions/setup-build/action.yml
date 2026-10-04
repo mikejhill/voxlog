@@ -1,0 +1,23 @@
+name: Set up build
+description: JDK 21, Android SDK packages pinned in the version catalog, and Gradle caching.
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-java@v5
+      with:
+        distribution: temurin
+        java-version: "21"
+    - uses: android-actions/setup-android@v3
+      with:
+        packages: ""
+    - name: Install pinned SDK packages
+      shell: bash
+      run: |
+        ndk=$(grep -E '^ndk = ' gradle/libs.versions.toml | cut -d'"' -f2)
+        cmake=$(grep -E '^cmake = ' gradle/libs.versions.toml | cut -d'"' -f2)
+        compile=$(grep -E '^compileSdk = ' gradle/libs.versions.toml | cut -d'"' -f2)
+        yes | sdkmanager --licenses > /dev/null
+        sdkmanager "platforms;android-${compile}.0" "build-tools;36.1.0" "ndk;${ndk}" "cmake;${cmake}"
+    - uses: gradle/actions/setup-gradle@v5
+      with:
+        cache-read-only: ${{ github.ref != 'refs/heads/main' }}

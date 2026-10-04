@@ -18,6 +18,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.rememberNavController
 import com.mikejhill.voxlog.core.datastore.AppSettings
 import com.mikejhill.voxlog.core.datastore.SettingsRepository
+import com.mikejhill.voxlog.core.designsystem.component.ScreenRoot
 import com.mikejhill.voxlog.core.designsystem.theme.VoxLogTheme
 import com.mikejhill.voxlog.core.designsystem.theme.VoxLogThemeMode
 import com.mikejhill.voxlog.core.model.CaptureIntents
@@ -47,8 +48,10 @@ class MainActivity : ComponentActivity() {
         setContent {
             val settings by settingsRepository.settings.collectAsStateWithLifecycle(AppSettings())
             VoxLogTheme(VoxLogThemeMode.valueOf(settings.themeMode.name), settings.isDynamicColorEnabled) {
-                RequestNotificationPermissionOnce()
-                VoxLogNavHost(rememberNavController(), deepLinkNoteId)
+                ScreenRoot {
+                    RequestNotificationPermissionOnce()
+                    VoxLogNavHost(rememberNavController(), deepLinkNoteId)
+                }
             }
         }
     }

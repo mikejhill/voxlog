@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="capture_channel_name">Recording</string>
+    <string name="capture_tile_label">Voice note</string>
     <string name="capture_notification_title">Recording voice note</string>
     <string name="capture_notification_text">Tap to return · recording continues until you stop it</string>
     <string name="capture_stop">Stop</string>

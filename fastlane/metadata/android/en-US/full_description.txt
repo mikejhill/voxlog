@@ -1,0 +1,47 @@
+<p><b>Talk, tap stop, done.</b> VoxLog captures voice and text notes with as little friction as possible and keeps them useful afterwards.</p>
+
+<p><b>Capture in one tap</b></p>
+<ul>
+<li>Launcher shortcuts start recording instantly, including one shortcut per category ("Record into Journal").</li>
+<li>Recording never stops on its own. It keeps going with the screen off until you press Stop.</li>
+<li>Your note is saved the moment you stop. Transcription happens in the background.</li>
+<li>Typed notes open with the keyboard ready and a timestamp title you can change.</li>
+</ul>
+
+<p><b>Private, on-device speech recognition</b></p>
+<ul>
+<li>Speech-to-text runs on your phone with whisper.cpp. No account, no server, no tracking.</li>
+<li>Choose a model from Tiny (fastest) to Small (most accurate), English-only or multilingual.</li>
+</ul>
+
+<p><b>Organized and searchable</b></p>
+<ul>
+<li>Categories with their own settings (keep audio or text only, default labels, AI options).</li>
+<li>Unlimited labels, filtering by category and labels together.</li>
+<li>Full-text search plus on-device semantic search that also finds notes with similar meaning.</li>
+<li>Every note records when it was captured, how long it is, and optionally where.</li>
+</ul>
+
+<p><b>Your data, your storage</b></p>
+<ul>
+<li>Mirror notes to any folder as Markdown files: Nextcloud, Syncthing, or the OneDrive or Google Drive apps.</li>
+<li>Export everything as JSON or CSV plus audio files.</li>
+</ul>
+
+<p><b>Optional AI</b></p>
+<ul>
+<li>Bring your own Anthropic or OpenAI key, or use any OpenAI-compatible endpoint (LiteLLM, Ollama, your own gateway).</li>
+<li>Clean up transcripts, generate titles, suggest labels and categorize notes. Nothing is sent anywhere unless you set this up.</li>
+<li>Custom HTTP hooks send new notes to your own services.</li>
+</ul>
+
+<p><b>Permissions</b></p>
+<ul>
+<li><i>Microphone</i>: records voice notes, only while a recording notification is showing.</li>
+<li><i>Notifications</i>: the recording notification with its Stop button, and transcription progress.</li>
+<li><i>Foreground services</i>: keep recording and long transcriptions running with the screen off.</li>
+<li><i>Internet</i>: one-time download of the speech and search models (checksum-verified). Also used by optional AI processing and hooks, only if you configure them.</li>
+<li><i>Location (optional)</i>: only requested if you turn on "Save location".</li>
+</ul>
+
+<p>Free and open source software. No ads, no analytics, no Google Play services.</p>

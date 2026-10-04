@@ -27,6 +27,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import com.mikejhill.voxlog.core.data.model.ModelFileState
@@ -35,6 +36,7 @@ import com.mikejhill.voxlog.core.datastore.LlmProviderType
 import com.mikejhill.voxlog.core.datastore.ThemeMode
 import com.mikejhill.voxlog.core.designsystem.component.CategoryPickerSheet
 import com.mikejhill.voxlog.core.model.ModelCatalog
+import com.mikejhill.voxlog.feature.settings.R
 import com.mikejhill.voxlog.feature.settings.SettingsActions
 import com.mikejhill.voxlog.feature.settings.SettingsUiState
 
@@ -53,8 +55,12 @@ fun SettingsScreen(state: SettingsUiState, actions: SettingsActions, navigation:
         modifier = modifier,
         topBar = {
             TopAppBar(
-                title = { Text("Settings") },
-                navigationIcon = { IconButton(onClick = navigation.onBack) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, "Back") } },
+                title = { Text(stringResource(R.string.settings_settings)) },
+                navigationIcon = {
+                    IconButton(onClick = navigation.onBack) {
+                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, stringResource(R.string.settings_back))
+                    }
+                },
             )
         },
         snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -76,29 +82,43 @@ fun SettingsScreen(state: SettingsUiState, actions: SettingsActions, navigation:
 private fun CaptureSection(state: SettingsUiState, actions: SettingsActions, navigation: SettingsNavigation) {
     var isPickingDefault by remember { mutableStateOf(false) }
     val defaultCategory = state.categories.firstOrNull { it.id.value == state.settings.defaultCategoryId }
-    SectionHeader("Capture")
-    ClickRow("Default category", summary = defaultCategory?.name ?: "Uncategorized", onClick = { isPickingDefault = true })
+    SectionHeader(stringResource(R.string.settings_capture))
     ClickRow(
-        "Categories",
-        summary = "Add categories, per-category settings and home-screen shortcuts",
+        stringResource(R.string.settings_default_category),
+        summary =
+            defaultCategory?.name ?: stringResource(R.string.settings_uncategorized),
+        onClick = { isPickingDefault = true },
+    )
+    ClickRow(
+        stringResource(R.string.settings_categories),
+        summary = stringResource(R.string.settings_add_categories_per_category_settings_and),
         onClick = navigation.onManageCategories,
         trailing = { Chevron() },
     )
-    ClickRow("Labels", summary = "Rename or delete labels", onClick = navigation.onManageLabels, trailing = { Chevron() })
+    ClickRow(
+        stringResource(
+            R.string.settings_labels,
+        ),
+        summary = stringResource(R.string.settings_rename_or_delete_labels),
+        onClick = navigation.onManageLabels,
+        trailing = {
+            Chevron()
+        },
+    )
     SwitchRow(
-        "Save location",
+        stringResource(R.string.settings_save_location),
         isChecked = state.settings.isLocationCaptureEnabled,
-        summary = "Tag new notes with where they were captured",
+        summary = stringResource(R.string.settings_tag_new_notes_with_where_they_were_captu),
         onCheckedChange = { isEnabled ->
             if (isEnabled) navigation.onRequestLocationPermission(state.settings.isPreciseLocationEnabled)
             actions.setLocationCapture(isEnabled)
         },
     )
     SwitchRow(
-        "Precise location",
+        stringResource(R.string.settings_precise_location),
         isChecked = state.settings.isPreciseLocationEnabled,
         isEnabled = state.settings.isLocationCaptureEnabled,
-        summary = "Use GPS instead of approximate network location",
+        summary = stringResource(R.string.settings_use_gps_instead_of_approximate_network_l),
         onCheckedChange = { isPrecise ->
             if (isPrecise) navigation.onRequestLocationPermission(true)
             actions.setPreciseLocation(isPrecise)
@@ -119,7 +139,7 @@ private fun CaptureSection(state: SettingsUiState, actions: SettingsActions, nav
 
 @Composable
 private fun SpeechSection(state: SettingsUiState, actions: SettingsActions) {
-    SectionHeader("Speech to text (on device)")
+    SectionHeader(stringResource(R.string.settings_speech_to_text_on_device))
     ModelCatalog.speechModels.forEach { model ->
         val modelState = state.speechModelStates[model.id] ?: ModelFileState.Missing
         RadioRow(
@@ -129,7 +149,9 @@ private fun SpeechSection(state: SettingsUiState, actions: SettingsActions) {
             onSelect = { actions.selectSpeechModel(model.id) },
             trailing = {
                 if (modelState == ModelFileState.Ready && state.settings.speechModelId != model.id) {
-                    IconButton(onClick = { actions.deleteSpeechModel(model.id) }) { Icon(Icons.Outlined.Delete, "Delete model") }
+                    IconButton(onClick = {
+                        actions.deleteSpeechModel(model.id)
+                    }) { Icon(Icons.Outlined.Delete, stringResource(R.string.settings_delete_model)) }
                 } else {
                     ModelStateIcon(modelState)
                 }
@@ -140,12 +162,15 @@ private fun SpeechSection(state: SettingsUiState, actions: SettingsActions) {
 
 @Composable
 private fun SearchSection(state: SettingsUiState, actions: SettingsActions) {
-    SectionHeader("Search")
+    SectionHeader(stringResource(R.string.settings_search))
     SwitchRow(
-        "Semantic search",
+        stringResource(R.string.settings_semantic_search),
         isChecked = state.settings.isSemanticSearchEnabled,
-        summary = "Also find related notes by meaning · ${ModelCatalog.embeddingModel.modelFile.sizeBytes / BYTES_PER_MEGABYTE} MB · " +
+        summary = stringResource(
+            R.string.settings_semantic_search_summary,
+            ModelCatalog.embeddingModel.modelFile.sizeBytes / BYTES_PER_MEGABYTE,
             describe(state.embeddingModelState),
+        ),
         onCheckedChange = actions::setSemanticSearch,
     )
 }
@@ -153,7 +178,7 @@ private fun SearchSection(state: SettingsUiState, actions: SettingsActions) {
 @Composable
 private fun AiSection(state: SettingsUiState, actions: SettingsActions) {
     val config = state.settings.postProcessing
-    SectionHeader("AI processing (optional)")
+    SectionHeader(stringResource(R.string.settings_ai_processing_optional))
     LlmProviderType.entries.forEach { provider ->
         RadioRow(
             title = providerName(provider),
@@ -163,43 +188,49 @@ private fun AiSection(state: SettingsUiState, actions: SettingsActions) {
     }
     if (config.provider == LlmProviderType.NONE) return
     TextValueRow(
-        "API key",
+        stringResource(R.string.settings_api_key),
         if (state.hasApiKey) "set" else "",
         actions::setApiKey,
         isSecret = true,
-        placeholder = "Stored encrypted on this device",
+        placeholder = stringResource(R.string.settings_stored_encrypted_on_this_device),
     )
     if (config.provider == LlmProviderType.OPENAI_COMPATIBLE) {
-        TextValueRow("Base URL", config.customBaseUrl, { url ->
+        TextValueRow(stringResource(R.string.settings_base_url), config.customBaseUrl, { url ->
             actions.updatePostProcessing { it.copy(customBaseUrl = url.trim()) }
         }, placeholder = "https://my-gateway.example/v1")
     }
     ModelPickerRow(state, actions)
-    SwitchRow("Clean up transcripts", config.shouldCleanupGlobally, { value ->
+    SwitchRow(stringResource(R.string.settings_clean_up_transcripts), config.shouldCleanupGlobally, { value ->
         actions.updatePostProcessing { it.copy(shouldCleanupGlobally = value) }
-    }, summary = "Fix punctuation and filler words in voice notes")
-    SwitchRow("Auto-name", config.shouldAutoNameGlobally, { value ->
+    }, summary = stringResource(R.string.settings_fix_punctuation_and_filler_words_in_voic))
+    SwitchRow(stringResource(R.string.settings_auto_name), config.shouldAutoNameGlobally, { value ->
         actions.updatePostProcessing { it.copy(shouldAutoNameGlobally = value) }
-    }, summary = "Replace timestamp titles with a short summary")
-    SwitchRow("Auto-label", config.shouldAutoLabelGlobally, { value ->
+    }, summary = stringResource(R.string.settings_replace_timestamp_titles_with_a_short_su))
+    SwitchRow(stringResource(R.string.settings_auto_label), config.shouldAutoLabelGlobally, { value ->
         actions.updatePostProcessing { it.copy(shouldAutoLabelGlobally = value) }
     })
-    SwitchRow("Auto-categorize", config.shouldAutoCategorizeGlobally, { value ->
+    SwitchRow(stringResource(R.string.settings_auto_categorize), config.shouldAutoCategorizeGlobally, { value ->
         actions.updatePostProcessing { it.copy(shouldAutoCategorizeGlobally = value) }
-    }, summary = "Only for notes in Uncategorized")
-    TextValueRow("Cleanup instructions", config.cleanupInstructions, { value ->
+    }, summary = stringResource(R.string.settings_only_for_notes_in_uncategorized))
+    TextValueRow(stringResource(R.string.settings_cleanup_instructions), config.cleanupInstructions, { value ->
         actions.updatePostProcessing { it.copy(cleanupInstructions = value) }
-    }, isMultiline = true, placeholder = "Optional extra guidance")
+    }, isMultiline = true, placeholder = stringResource(R.string.settings_optional_extra_guidance))
 }
 
 @Composable
 private fun ModelPickerRow(state: SettingsUiState, actions: SettingsActions) {
     var isPicking by remember { mutableStateOf(false) }
     val config = state.settings.postProcessing
-    ClickRow("Model", summary = config.model.ifBlank { "Not set" }, onClick = {
-        actions.loadAvailableModels()
-        isPicking = true
-    })
+    ClickRow(
+        stringResource(R.string.settings_model),
+        summary = config.model.ifBlank {
+            stringResource(R.string.settings_not_set)
+        },
+        onClick = {
+            actions.loadAvailableModels()
+            isPicking = true
+        },
+    )
     if (isPicking) {
         ModelPickerDialog(
             current = config.model,
@@ -216,7 +247,7 @@ private fun ModelPickerRow(state: SettingsUiState, actions: SettingsActions) {
 @Composable
 private fun HooksSection(state: SettingsUiState, actions: SettingsActions) {
     var editing by remember { mutableStateOf<HookSettings?>(null) }
-    SectionHeader("Custom hooks")
+    SectionHeader(stringResource(R.string.settings_custom_hooks))
     state.settings.hooks.forEach { hook ->
         ClickRow(
             hook.name.ifBlank {
@@ -226,7 +257,16 @@ private fun HooksSection(state: SettingsUiState, actions: SettingsActions) {
             onClick = { editing = hook },
         )
     }
-    ClickRow("Add hook", summary = "POST each new note to your own endpoint", onClick = { editing = actions.newHook() })
+    ClickRow(
+        stringResource(
+            R.string.settings_add_hook,
+        ),
+        summary = stringResource(R.string.settings_post_each_new_note_to_your_own_endpoint),
+        onClick = {
+            editing =
+                actions.newHook()
+        },
+    )
     editing?.let { hook ->
         HookEditorDialog(
             hook = hook,
@@ -250,71 +290,97 @@ private fun StorageSection(state: SettingsUiState, actions: SettingsActions) {
         rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri -> uri?.let(actions::setSyncFolder) }
     val exportPicker =
         rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/zip")) { uri -> uri?.let(actions::exportTo) }
-    SectionHeader("Storage & sync")
+    SectionHeader(stringResource(R.string.settings_storage_sync))
     val folder = state.settings.syncFolderUri
     ClickRow(
-        "Sync folder",
-        summary = folder?.let { it.toUri().lastPathSegment ?: it } ?: "Off — notes stay on this device only",
+        stringResource(R.string.settings_sync_folder),
+        summary = folder?.let { it.toUri().lastPathSegment ?: it } ?: stringResource(R.string.settings_off_notes_stay_on_this_device_only),
         onClick = { folderPicker.launch(null) },
     )
     if (folder != null) {
-        ClickRow("Sync now", onClick = actions::syncNow)
-        ClickRow("Stop syncing", summary = "Files already in the folder are kept", onClick = actions::clearSyncFolder)
+        ClickRow(stringResource(R.string.settings_sync_now), onClick = actions::syncNow)
+        ClickRow(
+            stringResource(R.string.settings_stop_syncing),
+            summary = stringResource(R.string.settings_files_already_in_the_folder_are_kept),
+            onClick = actions::clearSyncFolder,
+        )
     }
-    ClickRow("Export everything", summary = "ZIP with notes.json, notes.csv and audio files", onClick = {
-        exportPicker.launch("voxlog-export.zip")
-    })
+    ClickRow(
+        stringResource(
+            R.string.settings_export_everything,
+        ),
+        summary = stringResource(R.string.settings_zip_with_notes_json_notes_csv_and_audio),
+        onClick = {
+            exportPicker.launch("voxlog-export.zip")
+        },
+    )
 }
 
 @Composable
 private fun AppearanceSection(state: SettingsUiState, actions: SettingsActions) {
-    SectionHeader("Appearance")
+    SectionHeader(stringResource(R.string.settings_appearance))
     ThemeMode.entries.forEach { mode ->
         RadioRow(themeName(mode), isSelected = state.settings.themeMode == mode, onSelect = { actions.setThemeMode(mode) })
     }
-    SwitchRow("Wallpaper colors", state.settings.isDynamicColorEnabled, actions::setDynamicColor, summary = "Material You dynamic color")
+    SwitchRow(
+        stringResource(R.string.settings_wallpaper_colors),
+        state.settings.isDynamicColorEnabled,
+        actions::setDynamicColor,
+        summary = stringResource(R.string.settings_material_you_dynamic_color),
+    )
 }
 
 @Composable
 private fun AboutSection(appVersion: String) {
-    SectionHeader("About")
-    ClickRow("VoxLog $appVersion", summary = "Free and open source · no accounts · no tracking", onClick = {})
+    SectionHeader(stringResource(R.string.settings_about))
+    ClickRow(
+        stringResource(
+            R.string.settings_about_version,
+            appVersion,
+        ),
+        summary = stringResource(R.string.settings_free_and_open_source_no_accounts_no_trac),
+        onClick = {
+        },
+    )
 }
 
 @Composable
 private fun ModelStateIcon(state: ModelFileState) {
     when (state) {
-        ModelFileState.Ready -> Icon(Icons.Outlined.CheckCircle, "Downloaded")
+        ModelFileState.Ready -> Icon(Icons.Outlined.CheckCircle, stringResource(R.string.settings_downloaded))
 
         is ModelFileState.Downloading -> CircularProgressIndicator(progress = {
             state.progressPercent / 100f
         }, modifier = Modifier.padding(4.dp))
 
-        else -> Icon(Icons.Outlined.Download, "Not downloaded")
+        else -> Icon(Icons.Outlined.Download, stringResource(R.string.settings_not_downloaded))
     }
 }
 
 @Composable
 private fun Chevron() = Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, contentDescription = null)
 
+@Composable
 private fun describe(state: ModelFileState): String = when (state) {
-    ModelFileState.Missing -> "not downloaded"
-    is ModelFileState.Downloading -> "downloading ${state.progressPercent}%"
-    ModelFileState.Ready -> "ready"
-    is ModelFileState.Failed -> "download failed — tap to retry"
+    ModelFileState.Missing -> stringResource(R.string.settings_model_missing)
+    is ModelFileState.Downloading -> stringResource(R.string.settings_model_downloading, state.progressPercent)
+    ModelFileState.Ready -> stringResource(R.string.settings_model_ready)
+    is ModelFileState.Failed -> stringResource(R.string.settings_model_failed)
 }
 
+@Composable
 private fun providerName(provider: LlmProviderType): String = when (provider) {
-    LlmProviderType.NONE -> "Off (note-taking only)"
-    LlmProviderType.ANTHROPIC -> "Anthropic (Claude)"
-    LlmProviderType.OPENAI -> "OpenAI"
-    LlmProviderType.OPENAI_COMPATIBLE -> "Custom OpenAI-compatible endpoint"
+    LlmProviderType.NONE -> stringResource(R.string.settings_off_note_taking_only)
+    LlmProviderType.ANTHROPIC -> stringResource(R.string.settings_anthropic_claude)
+    LlmProviderType.OPENAI -> stringResource(R.string.settings_openai)
+    LlmProviderType.OPENAI_COMPATIBLE -> stringResource(R.string.settings_custom_openai_compatible_endpoint)
 }
 
+@Composable
 private fun themeName(mode: ThemeMode): String = when (mode) {
-    ThemeMode.SYSTEM -> "Follow system"
-    ThemeMode.LIGHT -> "Light"
-    ThemeMode.DARK -> "Dark"
+    ThemeMode.SYSTEM -> stringResource(R.string.settings_follow_system)
+    ThemeMode.LIGHT -> stringResource(R.string.settings_light)
+    ThemeMode.DARK -> stringResource(R.string.settings_dark)
 }
 
 private const val BYTES_PER_MEGABYTE = 1_000_000

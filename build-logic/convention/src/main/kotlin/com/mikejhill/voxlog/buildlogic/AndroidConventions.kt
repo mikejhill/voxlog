@@ -10,6 +10,8 @@ internal fun Project.configureAndroidCommon(android: CommonExtension) {
     val javaVersion = JavaVersion.toVersion(libs.versionOf("javaTarget"))
     android.apply {
         compileSdk = libs.versionOf("compileSdk").toInt()
+        // Pinned everywhere so release packaging strips native symbols with the same NDK that built them.
+        ndkVersion = libs.versionOf("ndk")
         defaultConfig.minSdk = libs.versionOf("minSdk").toInt()
         defaultConfig.testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         compileOptions.sourceCompatibility = javaVersion

@@ -3,7 +3,6 @@ plugins {
 }
 
 android {
-    ndkVersion = libs.versions.ndk.get()
     defaultConfig {
         ndk {
             // arm64 for phones, x86_64 for emulators and CI. 32-bit devices are not supported.

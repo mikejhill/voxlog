@@ -1,0 +1,63 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build, verify and publish a signed release
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          submodules: recursive
+      - uses: ./.github/actions/setup-build
+
+      - name: Check the tag matches the version in the build file
+        id: version
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          name=$(grep -oP 'versionName = "\K[^"]+' voxlog-app/build.gradle.kts)
+          code=$(grep -oP 'versionCode = \K[0-9]+' voxlog-app/build.gradle.kts)
+          test "$tag" = "$name" || { echo "Tag $tag does not match versionName $name (run scripts/bump_version.py)"; exit 1; }
+          test -f "fastlane/metadata/android/en-US/changelogs/${code}.txt" || { echo "Missing changelog for $code"; exit 1; }
+          echo "name=$name" >> "$GITHUB_OUTPUT"
+          echo "code=$code" >> "$GITHUB_OUTPUT"
+
+      - name: Build the unsigned APK twice and require identical output
+        run: |
+          ./gradlew :voxlog-app:assembleRelease --no-build-cache
+          cp voxlog-app/build/outputs/apk/release/voxlog-app-release-unsigned.apk /tmp/first.apk
+          ./gradlew clean :voxlog-app:assembleRelease --no-build-cache --rerun-tasks
+          cmp /tmp/first.apk voxlog-app/build/outputs/apk/release/voxlog-app-release-unsigned.apk
+
+      - name: Sign with the release key
+        env:
+          KEYSTORE_BASE64: ${{ secrets.RELEASE_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
+        run: |
+          echo "$KEYSTORE_BASE64" | base64 -d > /tmp/release.jks
+          apk="voxlog-${{ steps.version.outputs.name }}.apk"
+          "$ANDROID_HOME/build-tools/36.1.0/apksigner" sign \
+            --ks /tmp/release.jks --ks-pass env:KEYSTORE_PASSWORD \
+            --ks-key-alias "$KEY_ALIAS" --key-pass env:KEY_PASSWORD \
+            --out "$apk" voxlog-app/build/outputs/apk/release/voxlog-app-release-unsigned.apk
+          "$ANDROID_HOME/build-tools/36.1.0/apksigner" verify --print-certs "$apk"
+          sha256sum "$apk" > "$apk.sha256"
+          rm /tmp/release.jks
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >
+          gh release create "$GITHUB_REF_NAME"
+          "voxlog-${{ steps.version.outputs.name }}.apk" "voxlog-${{ steps.version.outputs.name }}.apk.sha256"
+          --title "VoxLog ${{ steps.version.outputs.name }}"
+          --notes-file "fastlane/metadata/android/en-US/changelogs/${{ steps.version.outputs.code }}.txt"

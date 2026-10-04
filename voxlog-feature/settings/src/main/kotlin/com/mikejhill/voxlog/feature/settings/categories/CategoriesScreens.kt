@@ -44,6 +44,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.mikejhill.voxlog.core.designsystem.component.CategoryColorPalette
 import com.mikejhill.voxlog.core.designsystem.component.CategoryIcons
@@ -52,6 +53,7 @@ import com.mikejhill.voxlog.core.model.Category
 import com.mikejhill.voxlog.core.model.CategoryId
 import com.mikejhill.voxlog.core.model.CategorySettings
 import com.mikejhill.voxlog.core.model.Label
+import com.mikejhill.voxlog.feature.settings.R
 import com.mikejhill.voxlog.feature.settings.ui.SectionHeader
 import com.mikejhill.voxlog.feature.settings.ui.SwitchRow
 import com.mikejhill.voxlog.feature.settings.ui.TextEditDialog
@@ -71,23 +73,37 @@ fun CategoriesScreen(
         modifier = modifier,
         topBar = {
             TopAppBar(
-                title = { Text("Categories") },
-                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, "Back") } },
+                title = { Text(stringResource(R.string.settings_categories)) },
+                navigationIcon = {
+                    IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, stringResource(R.string.settings_back)) }
+                },
             )
         },
         floatingActionButton = {
             ExtendedFloatingActionButton(onClick = {
                 isCreating = true
-            }, icon = { Icon(Icons.Outlined.Add, null) }, text = { Text("New category") })
+            }, icon = { Icon(Icons.Outlined.Add, null) }, text = { Text(stringResource(R.string.settings_new_category)) })
         },
     ) { padding ->
         LazyColumn(Modifier.padding(padding)) {
             items(state.categories, key = { it.id.value }) { category ->
                 ListItem(
                     headlineContent = { Text(category.name) },
-                    supportingContent = { Text(if (category.settings.shouldSaveAudio) "Keeps audio" else "Text only") },
+                    supportingContent = {
+                        Text(
+                            if (category.settings.shouldSaveAudio) {
+                                stringResource(
+                                    R.string.settings_keeps_audio,
+                                )
+                            } else {
+                                stringResource(R.string.settings_text_only)
+                            },
+                        )
+                    },
                     leadingContent = { Icon(CategoryIcons.forName(category.iconName), null, tint = Color(category.colorArgb)) },
-                    trailingContent = { if (category.isSystem) Icon(Icons.Outlined.Lock, "System category") },
+                    trailingContent = {
+                        if (category.isSystem) Icon(Icons.Outlined.Lock, stringResource(R.string.settings_system_category))
+                    },
                     modifier = Modifier.clickable { onOpen(category.id) },
                 )
             }
@@ -95,7 +111,7 @@ fun CategoriesScreen(
     }
     if (isCreating) {
         TextEditDialog(
-            title = "New category",
+            title = stringResource(R.string.settings_new_category),
             initialValue = "",
             onConfirm = {
                 onCreate(it)
@@ -124,11 +140,15 @@ fun CategoryEditorScreen(
         topBar = {
             TopAppBar(
                 title = { Text(category.name) },
-                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, "Back") } },
+                navigationIcon = {
+                    IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, stringResource(R.string.settings_back)) }
+                },
                 actions = {
                     if (!category.isSystem) {
-                        IconButton(onClick = { isRenaming = true }) { Icon(Icons.Outlined.Edit, "Rename") }
-                        IconButton(onClick = { isConfirmingDelete = true }) { Icon(Icons.Outlined.Delete, "Delete category") }
+                        IconButton(onClick = { isRenaming = true }) { Icon(Icons.Outlined.Edit, stringResource(R.string.settings_rename)) }
+                        IconButton(onClick = {
+                            isConfirmingDelete = true
+                        }) { Icon(Icons.Outlined.Delete, stringResource(R.string.settings_delete_category)) }
                     }
                 },
             )
@@ -136,7 +156,7 @@ fun CategoryEditorScreen(
     ) { padding ->
         Column(Modifier.padding(padding).verticalScroll(rememberScrollState())) {
             if (category.isSystem) SystemCategoryNotice()
-            SectionHeader("Appearance")
+            SectionHeader(stringResource(R.string.settings_appearance))
             ColorPicker(category.colorArgb) { onSave(category.copy(colorArgb = it)) }
             IconPicker(category.iconName, category.colorArgb) { onSave(category.copy(iconName = it)) }
             CaptureSettingsSection(category.settings) { onSave(category.copy(settings = it)) }
@@ -146,7 +166,7 @@ fun CategoryEditorScreen(
         }
     }
     if (isRenaming) {
-        TextEditDialog("Rename category", category.name, onConfirm = {
+        TextEditDialog(stringResource(R.string.settings_rename_category), category.name, onConfirm = {
             if (it.isNotBlank()) onSave(category.copy(name = it.trim()))
             isRenaming = false
         }, onDismiss = { isRenaming = false })
@@ -159,7 +179,7 @@ fun CategoryEditorScreen(
 @Composable
 private fun SystemCategoryNotice() {
     Text(
-        "This built-in category can't be renamed or deleted, but its settings can be changed.",
+        stringResource(R.string.settings_this_built_in_category_can_t_be_renamed),
         style = MaterialTheme.typography.bodyMedium,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         modifier = Modifier.padding(Spacing.large),
@@ -169,25 +189,36 @@ private fun SystemCategoryNotice() {
 @Composable
 private fun CaptureSettingsSection(settings: CategorySettings, onChange: (CategorySettings) -> Unit) {
     Column {
-        SectionHeader("When a note is captured here")
+        SectionHeader(stringResource(R.string.settings_when_a_note_is_captured_here))
         SwitchRow(
-            "Save audio",
+            stringResource(R.string.settings_save_audio),
             settings.shouldSaveAudio,
             { onChange(settings.copy(shouldSaveAudio = it)) },
-            summary = "Off keeps only the transcript. Applies to notes recorded into this category.",
+            summary = stringResource(R.string.settings_off_keeps_only_the_transcript_applies_to),
         )
-        SwitchRow("Clean up transcript with AI", settings.shouldAutoCleanup, { onChange(settings.copy(shouldAutoCleanup = it)) })
-        SwitchRow("Auto-name with AI", settings.shouldAutoName, { onChange(settings.copy(shouldAutoName = it)) })
-        SwitchRow("Auto-label with AI", settings.shouldAutoLabel, { onChange(settings.copy(shouldAutoLabel = it)) })
+        SwitchRow(stringResource(R.string.settings_clean_up_transcript_with_ai), settings.shouldAutoCleanup, {
+            onChange(settings.copy(shouldAutoCleanup = it))
+        })
+        SwitchRow(stringResource(R.string.settings_auto_name_with_ai), settings.shouldAutoName, {
+            onChange(settings.copy(shouldAutoName = it))
+        })
+        SwitchRow(stringResource(R.string.settings_auto_label_with_ai), settings.shouldAutoLabel, {
+            onChange(settings.copy(shouldAutoLabel = it))
+        })
     }
 }
 
 @Composable
 private fun DefaultLabelsSection(settings: CategorySettings, labels: List<Label>, onChange: (CategorySettings) -> Unit) {
     Column {
-        SectionHeader("Default labels")
+        SectionHeader(stringResource(R.string.settings_default_labels))
         FlowRow(Modifier.padding(horizontal = Spacing.large), horizontalArrangement = Arrangement.spacedBy(Spacing.small)) {
-            if (labels.isEmpty()) Text("No labels yet. Add labels from a note.", style = MaterialTheme.typography.bodySmall)
+            if (labels.isEmpty()) {
+                Text(
+                    stringResource(R.string.settings_no_labels_yet_add_labels_from_a_note),
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            }
             labels.forEach { label ->
                 val isSelected = label.id in settings.defaultLabelIds
                 FilterChip(
@@ -207,15 +238,17 @@ private fun DefaultLabelsSection(settings: CategorySettings, labels: List<Label>
 private fun ShortcutsSection(category: Category) {
     val context = LocalContext.current
     Column {
-        SectionHeader("Home-screen shortcuts")
+        SectionHeader(stringResource(R.string.settings_home_screen_shortcuts))
         Column(Modifier.padding(horizontal = Spacing.large), verticalArrangement = Arrangement.spacedBy(Spacing.small)) {
             if (ShortcutPinner.isSupported(context)) {
                 OutlinedButton(onClick = {
                     ShortcutPinner.requestPin(context, category, ShortcutKind.VOICE)
-                }) { Text("Add voice shortcut") }
-                OutlinedButton(onClick = { ShortcutPinner.requestPin(context, category, ShortcutKind.TEXT) }) { Text("Add text shortcut") }
+                }) { Text(stringResource(R.string.settings_add_voice_shortcut)) }
+                OutlinedButton(onClick = {
+                    ShortcutPinner.requestPin(context, category, ShortcutKind.TEXT)
+                }) { Text(stringResource(R.string.settings_add_text_shortcut)) }
             } else {
-                Text("Your launcher doesn't support pinned shortcuts.", style = MaterialTheme.typography.bodySmall)
+                Text(stringResource(R.string.settings_your_launcher_doesn_t_support_pinned_sho), style = MaterialTheme.typography.bodySmall)
             }
         }
     }
@@ -225,10 +258,12 @@ private fun ShortcutsSection(category: Category) {
 private fun DeleteCategoryDialog(name: String, onConfirm: () -> Unit, onDismiss: () -> Unit) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Delete $name?") },
-        text = { Text("Notes in this category move to Uncategorized. Nothing is deleted.") },
-        confirmButton = { TextButton(onClick = onConfirm) { Text("Delete", color = MaterialTheme.colorScheme.error) } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+        title = { Text(stringResource(R.string.settings_delete_named, name)) },
+        text = { Text(stringResource(R.string.settings_notes_in_this_category_move_to_uncategor)) },
+        confirmButton = {
+            TextButton(onClick = onConfirm) { Text(stringResource(R.string.settings_delete), color = MaterialTheme.colorScheme.error) }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.settings_cancel)) } },
     )
 }
 
@@ -292,18 +327,26 @@ fun LabelsScreen(
         modifier = modifier,
         topBar = {
             TopAppBar(
-                title = { Text("Labels") },
-                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, "Back") } },
+                title = { Text(stringResource(R.string.settings_labels)) },
+                navigationIcon = {
+                    IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, stringResource(R.string.settings_back)) }
+                },
             )
         },
     ) { padding ->
         LazyColumn(Modifier.padding(padding)) {
-            if (labels.isEmpty()) item { Text("No labels yet. Add labels from any note.", Modifier.padding(Spacing.large)) }
+            if (labels.isEmpty()) {
+                item {
+                    Text(stringResource(R.string.settings_no_labels_yet_add_labels_from_any_note), Modifier.padding(Spacing.large))
+                }
+            }
             items(labels, key = { it.id.value }) { label ->
                 ListItem(
                     headlineContent = { Text("#${label.name}") },
                     trailingContent = {
-                        IconButton(onClick = { deleting = label }) { Icon(Icons.Outlined.Delete, "Delete label") }
+                        IconButton(onClick = {
+                            deleting = label
+                        }) { Icon(Icons.Outlined.Delete, stringResource(R.string.settings_delete_label)) }
                     },
                     modifier = Modifier.clickable { renaming = label },
                 )
@@ -311,7 +354,7 @@ fun LabelsScreen(
         }
     }
     renaming?.let { label ->
-        TextEditDialog("Rename label", label.name, onConfirm = {
+        TextEditDialog(stringResource(R.string.settings_rename_label), label.name, onConfirm = {
             onRename(label, it)
             renaming = null
         }, onDismiss = { renaming = null })
@@ -319,15 +362,15 @@ fun LabelsScreen(
     deleting?.let { label ->
         AlertDialog(
             onDismissRequest = { deleting = null },
-            title = { Text("Delete #${label.name}?") },
-            text = { Text("The label is removed from every note. Notes are not deleted.") },
+            title = { Text(stringResource(R.string.settings_delete_label_named, label.name)) },
+            text = { Text(stringResource(R.string.settings_the_label_is_removed_from_every_note_not)) },
             confirmButton = {
                 TextButton(onClick = {
                     onDelete(label)
                     deleting = null
-                }) { Text("Delete", color = MaterialTheme.colorScheme.error) }
+                }) { Text(stringResource(R.string.settings_delete), color = MaterialTheme.colorScheme.error) }
             },
-            dismissButton = { TextButton(onClick = { deleting = null }) { Text("Cancel") } },
+            dismissButton = { TextButton(onClick = { deleting = null }) { Text(stringResource(R.string.settings_cancel)) } },
         )
     }
 }

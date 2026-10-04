@@ -1,0 +1,132 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  GRADLE_OPTS: -Dorg.gradle.daemon=false
+
+jobs:
+  check:
+    name: Static analysis, unit and screenshot tests, coverage
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          submodules: recursive
+      - uses: ./.github/actions/setup-build
+      - name: Format, lint, detekt, unit tests, architecture, screenshots, module graph, coverage
+        run: >
+          ./gradlew
+          spotlessCheck detekt lintDebug
+          testDebugUnitTest :voxlog-core:model:test :voxlog-engine:llm:test :voxlog-architecture-tests:test
+          verifyRoborazziDebug assertModuleGraph koverVerify koverXmlReport
+          --continue
+      - name: Upload reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: check-reports
+          path: |
+            **/build/reports/
+            **/build/outputs/roborazzi/
+            !**/build/reports/configuration-cache/
+
+  instrumented:
+    name: Instrumented end-to-end tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          submodules: recursive
+      - uses: ./.github/actions/setup-build
+      - uses: ./.github/actions/enable-kvm
+      - name: Run E2E tests on a Gradle Managed Device
+        run: >
+          ./gradlew :voxlog-app:pixel8api34DebugAndroidTest
+          -Pandroid.testoptions.manageddevices.emulator.gpu=swiftshader_indirect
+      - name: Upload results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: instrumented-results
+          path: voxlog-app/build/outputs/androidTest-results/
+
+  benchmark:
+    name: Performance budgets
+    if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'performance')
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          submodules: recursive
+      - uses: ./.github/actions/setup-build
+      - uses: ./.github/actions/enable-kvm
+      - name: Run macrobenchmarks
+        run: >
+          ./gradlew :voxlog-benchmark:pixel8api34BenchmarkReleaseAndroidTest
+          -Pandroid.testInstrumentationRunnerArguments.class=com.mikejhill.voxlog.benchmark.CaptureBenchmarks
+          -Pandroid.testoptions.manageddevices.emulator.gpu=swiftshader_indirect
+          -Pvoxlog.releaseAbis=arm64-v8a,x86_64
+      - name: Check budgets
+        run: python3 scripts/check_benchmarks.py voxlog-benchmark/build/outputs/managed_device_android_test_additional_output
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: benchmark-results
+          path: voxlog-benchmark/build/outputs/
+
+  reproducible-build:
+    name: Release build is reproducible
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          submodules: recursive
+      - uses: ./.github/actions/setup-build
+      - name: Build unsigned release twice from clean state
+        run: |
+          ./gradlew :voxlog-app:assembleRelease --no-build-cache
+          cp voxlog-app/build/outputs/apk/release/voxlog-app-release-unsigned.apk /tmp/first.apk
+          ./gradlew clean
+          ./gradlew :voxlog-app:assembleRelease --no-build-cache --rerun-tasks
+          cp voxlog-app/build/outputs/apk/release/voxlog-app-release-unsigned.apk /tmp/second.apk
+      - name: Compare
+        run: cmp /tmp/first.apk /tmp/second.apk && echo "Release APK is byte-for-byte reproducible"
+
+  guards:
+    name: Permissions, store metadata and F-Droid recipe
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          submodules: recursive
+      - uses: ./.github/actions/setup-build
+      - name: Merge release manifest
+        run: ./gradlew :voxlog-app:processReleaseMainManifest
+      - name: Every permission is documented
+        run: >
+          python3 scripts/check_permissions.py
+          voxlog-app/build/intermediates/merged_manifest/release/processReleaseMainManifest/AndroidManifest.xml
+          docs/PERMISSIONS.md
+      - name: Store listing is complete and screenshots are current
+        run: python3 scripts/check_store_metadata.py
+      - name: Lint the F-Droid recipe
+        run: |
+          docker run --rm -v "$PWD/fdroid:/repo/metadata:ro" -w /repo registry.gitlab.com/fdroid/fdroidserver:buildserver \
+            bash -c 'printf "repo_url: https://example.invalid/repo\n" > config.yml && fdroid lint com.mikejhill.voxlog'

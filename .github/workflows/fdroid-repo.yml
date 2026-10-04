@@ -1,0 +1,75 @@
+name: F-Droid repository
+
+# Publishes a self-hosted F-Droid repository on GitHub Pages containing every released APK.
+# Users add https://mikejhill.github.io/voxlog/fdroid/repo in the F-Droid or Droid-ify client.
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: fdroid-repo
+  cancel-in-progress: false
+
+jobs:
+  build-repo:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    container: registry.gitlab.com/fdroid/fdroidserver:buildserver
+    steps:
+      - uses: actions/checkout@v5
+      - name: Download every released APK
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          apt-get update && apt-get install -y gh
+          mkdir -p site/fdroid/repo
+          gh release list --repo "$GITHUB_REPOSITORY" --limit 100 --json tagName --jq '.[].tagName' |
+            while read -r tag; do gh release download "$tag" --repo "$GITHUB_REPOSITORY" --pattern '*.apk' --dir site/fdroid/repo --skip-existing; done
+      - name: Write repo config and listing metadata
+        env:
+          REPO_KEYSTORE_BASE64: ${{ secrets.FDROID_REPO_KEYSTORE_BASE64 }}
+          REPO_KEYSTORE_PASSWORD: ${{ secrets.FDROID_REPO_KEYSTORE_PASSWORD }}
+          REPO_KEY_ALIAS: ${{ secrets.FDROID_REPO_KEY_ALIAS }}
+        run: |
+          cd site/fdroid
+          echo "$REPO_KEYSTORE_BASE64" | base64 -d > keystore.p12
+          cat > config.yml <<EOF
+          repo_url: https://${GITHUB_REPOSITORY_OWNER}.github.io/${GITHUB_REPOSITORY#*/}/fdroid/repo
+          repo_name: VoxLog
+          repo_description: Official releases of VoxLog, signed by the developer.
+          archive_older: 0
+          keystore: keystore.p12
+          keystorepass: ${REPO_KEYSTORE_PASSWORD}
+          keypass: ${REPO_KEYSTORE_PASSWORD}
+          repo_keyalias: ${REPO_KEY_ALIAS}
+          keydname: CN=VoxLog F-Droid repo
+          EOF
+          chmod 600 config.yml keystore.p12
+          mkdir -p metadata
+          cp ../../fdroid/com.mikejhill.voxlog.yml metadata/
+          cp -r ../../fastlane/metadata/android metadata/com.mikejhill.voxlog
+      - name: Generate and sign the index
+        run: |
+          cd site/fdroid
+          fdroid update --create-metadata --pretty --use-date-from-apk
+          rm -f config.yml keystore.p12
+          rm -rf metadata tmp
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: site
+
+  deploy:
+    needs: build-repo
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

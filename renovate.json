@@ -1,0 +1,25 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended", ":semanticCommits"],
+  "schedule": ["before 6am on monday"],
+  "labels": ["dependencies"],
+  "git-submodules": { "enabled": true },
+  "packageRules": [
+    {
+      "description": "Group Kotlin, KSP and Compose compiler, which must move together",
+      "matchPackageNames": ["org.jetbrains.kotlin**", "com.google.devtools.ksp**"],
+      "groupName": "kotlin"
+    },
+    {
+      "description": "Group AndroidX Compose BOM and adaptive libraries",
+      "matchPackageNames": ["androidx.compose**"],
+      "groupName": "compose"
+    },
+    {
+      "description": "Automerge test-only and tooling patches once CI is green",
+      "matchUpdateTypes": ["patch"],
+      "matchDepTypes": ["testImplementation", "androidTestImplementation", "plugin"],
+      "automerge": true
+    }
+  ]
+}

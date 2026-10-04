@@ -18,10 +18,12 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import com.mikejhill.voxlog.core.designsystem.theme.Spacing
+import com.mikejhill.voxlog.feature.settings.R
 
 /** A section heading in the settings list. */
 @Composable
@@ -103,7 +105,7 @@ fun TextValueRow(
     ClickRow(
         title = title,
         summary = when {
-            value.isBlank() -> placeholder.ifBlank { "Not set" }
+            value.isBlank() -> placeholder.ifBlank { stringResource(R.string.settings_not_set) }
             isSecret -> "••••••••"
             else -> value
         },
@@ -148,8 +150,8 @@ fun TextEditDialog(
                 visualTransformation = if (isSecret) PasswordVisualTransformation() else VisualTransformation.None,
             )
         },
-        confirmButton = { TextButton(onClick = { onConfirm(text) }) { Text("Save") } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+        confirmButton = { TextButton(onClick = { onConfirm(text) }) { Text(stringResource(R.string.settings_save)) } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.settings_cancel)) } },
     )
 }
 

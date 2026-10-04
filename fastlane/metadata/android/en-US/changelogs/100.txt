@@ -1,0 +1,1 @@
+First release: one-tap voice and text capture, on-device transcription, categories, labels, hybrid search, export and folder sync.

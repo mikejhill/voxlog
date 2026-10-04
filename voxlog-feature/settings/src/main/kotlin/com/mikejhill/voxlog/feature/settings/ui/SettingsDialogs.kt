@@ -22,10 +22,12 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.mikejhill.voxlog.core.datastore.HookSettings
 import com.mikejhill.voxlog.core.designsystem.theme.Spacing
 import com.mikejhill.voxlog.core.model.Category
+import com.mikejhill.voxlog.feature.settings.R
 
 /** Lets the user pick a model from the provider's list or type any model id. */
 @Composable
@@ -33,12 +35,14 @@ fun ModelPickerDialog(current: String, available: List<String>, onSelect: (Strin
     var typed by remember { mutableStateOf(current) }
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Model") },
+        title = { Text(stringResource(R.string.settings_model)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(Spacing.small)) {
-                OutlinedTextField(value = typed, onValueChange = { typed = it }, singleLine = true, label = { Text("Model id") })
+                OutlinedTextField(value = typed, onValueChange = {
+                    typed = it
+                }, singleLine = true, label = { Text(stringResource(R.string.settings_model_id)) })
                 if (available.isEmpty()) {
-                    Text("Loading models from the provider…", style = MaterialTheme.typography.bodySmall)
+                    Text(stringResource(R.string.settings_loading_models_from_the_provider), style = MaterialTheme.typography.bodySmall)
                 } else {
                     LazyColumn(Modifier.heightIn(max = 280.dp)) {
                         items(available) { model ->
@@ -48,8 +52,10 @@ fun ModelPickerDialog(current: String, available: List<String>, onSelect: (Strin
                 }
             }
         },
-        confirmButton = { TextButton(onClick = { onSelect(typed.trim()) }, enabled = typed.isNotBlank()) { Text("Use") } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+        confirmButton = {
+            TextButton(onClick = { onSelect(typed.trim()) }, enabled = typed.isNotBlank()) { Text(stringResource(R.string.settings_use)) }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.settings_cancel)) } },
     )
 }
 
@@ -74,21 +80,27 @@ fun HookEditorDialog(
     val isUrlValid = url.startsWith("https://") || url.startsWith("http://")
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(if (hook.name.isBlank()) "New hook" else "Edit hook") },
+        title = {
+            Text(if (hook.name.isBlank()) stringResource(R.string.settings_new_hook) else stringResource(R.string.settings_edit_hook))
+        },
         text = {
             Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(Spacing.small)) {
-                OutlinedTextField(name, { name = it }, label = { Text("Name") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(name, {
+                    name = it
+                }, label = { Text(stringResource(R.string.settings_name)) }, singleLine = true, modifier = Modifier.fillMaxWidth())
                 OutlinedTextField(url, {
                     url = it
                 }, label = {
-                    Text("URL")
+                    Text(stringResource(R.string.settings_url))
                 }, singleLine = true, isError = url.isNotEmpty() && !isUrlValid, modifier = Modifier.fillMaxWidth())
                 OutlinedTextField(headers, {
                     headers = it
-                }, label = { Text("Headers (Name: value per line)") }, minLines = 2, modifier = Modifier.fillMaxWidth())
-                CheckRow("Send audio file", shouldIncludeAudio) { shouldIncludeAudio = it }
-                CheckRow("Enabled", isEnabled) { isEnabled = it }
-                Text("Categories (none = all)", style = MaterialTheme.typography.labelLarge)
+                }, label = {
+                    Text(stringResource(R.string.settings_headers_name_value_per_line))
+                }, minLines = 2, modifier = Modifier.fillMaxWidth())
+                CheckRow(stringResource(R.string.settings_send_audio_file), shouldIncludeAudio) { shouldIncludeAudio = it }
+                CheckRow(stringResource(R.string.settings_enabled), isEnabled) { isEnabled = it }
+                Text(stringResource(R.string.settings_categories_none_all), style = MaterialTheme.typography.labelLarge)
                 categories.forEach { category ->
                     CheckRow(category.name, category.id.value in categoryIds) { isChecked ->
                         categoryIds = if (isChecked) categoryIds + category.id.value else categoryIds - category.id.value
@@ -111,11 +123,15 @@ fun HookEditorDialog(
                         ),
                     )
                 },
-            ) { Text("Save") }
+            ) { Text(stringResource(R.string.settings_save)) }
         },
         dismissButton = {
-            if (hook.url.isNotBlank()) TextButton(onClick = onDelete) { Text("Delete", color = MaterialTheme.colorScheme.error) }
-            TextButton(onClick = onDismiss) { Text("Cancel") }
+            if (hook.url.isNotBlank()) {
+                TextButton(onClick = onDelete) {
+                    Text(stringResource(R.string.settings_delete), color = MaterialTheme.colorScheme.error)
+                }
+            }
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.settings_cancel)) }
         },
     )
 }

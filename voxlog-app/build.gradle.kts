@@ -4,6 +4,7 @@ plugins {
     alias(libs.plugins.voxlog.hilt)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.roborazzi)
+    alias(libs.plugins.baselineprofile)
 }
 
 android {
@@ -36,11 +37,16 @@ android {
     buildTypes {
         debug {
             applicationIdSuffix = ".debug"
+            // Emulators (x86_64) for development and CI.
+            ndk.abiFilters += setOf("arm64-v8a", "x86_64")
         }
         release {
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            // 64-bit ARM phones only by default: keeps the APK small (ONNX Runtime ships ~35 MB per ABI).
+            // Emulator benchmark runs add x86_64 with -Pvoxlog.releaseAbis=arm64-v8a,x86_64.
+            ndk.abiFilters += providers.gradleProperty("voxlog.releaseAbis").orElse("arm64-v8a").get().split(",")
             if (providers.gradleProperty("voxlog.signing.storeFile").isPresent) {
                 signingConfig = signingConfigs.getByName("release")
             }
@@ -50,6 +56,22 @@ android {
     buildFeatures {
         buildConfig = true
     }
+
+    lint {
+        // Release APKs are deliberately arm64-only to keep size down (see docs/adr/0004).
+        disable += "ChromeOsAbiSupport"
+    }
+
+    testOptions.managedDevices.localDevices.create("pixel8api34") {
+        device = "Pixel 8"
+        apiLevel = 34
+        systemImageSource = "aosp-atd"
+    }
+}
+
+// Benchmark/profile variants are local-only and never distributed, so they can use the debug key.
+android.buildTypes.matching { it.name.startsWith("benchmark") || it.name.startsWith("nonMinified") }.configureEach {
+    signingConfig = android.signingConfigs.getByName("debug")
 }
 
 dependencies {
@@ -70,6 +92,8 @@ dependencies {
     implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.profileinstaller)
+    implementation(libs.androidx.tracing)
+    baselineProfile(projects.voxlogBenchmark)
     implementation(libs.androidx.work.runtime)
     implementation(libs.androidx.compose.material3.adaptive.navigation.suite)
     implementation(libs.kotlinx.serialization.json)
@@ -81,18 +105,26 @@ dependencies {
     androidTestImplementation(projects.voxlogCore.testing)
     androidTestImplementation(libs.androidx.test.uiautomator)
     androidTestImplementation(libs.androidx.test.rules)
+    androidTestImplementation(libs.androidx.test.core)
+    androidTestImplementation(projects.voxlogEngine.whisper)
 }
 
-// Copies the light-theme screenshot baselines into the F-Droid/fastlane listing.
-// Run after `recordRoborazziDebug`; CI's metadata-guard job fails if the two drift apart.
-val generateStoreScreenshots by tasks.registering(Copy::class) {
+// Copies the light-theme screenshot baselines and store graphics into the F-Droid/fastlane listing.
+// CI's metadata-guard job (scripts/check_store_metadata.py) fails if they drift apart.
+val generateStoreScreenshots by tasks.registering(Sync::class) {
     group = "publishing"
-    description = "Renders key screens and copies them into fastlane/metadata as store screenshots."
+    description = "Renders key screens and store graphics and copies them into fastlane/metadata."
     dependsOn("recordRoborazziDebug")
-    from(layout.projectDirectory.dir("src/test/screenshots")) {
+    val screenshots = layout.projectDirectory.dir("src/test/screenshots")
+    from(screenshots) {
         include("*_light.png")
         exclude("x_*")
+        rename { it.removeSuffix("_light.png") + ".png" }
+        into("phoneScreenshots")
     }
-    into(rootProject.layout.projectDirectory.dir("fastlane/metadata/android/en-US/images/phoneScreenshots"))
-    rename { it.removeSuffix("_light.png") + ".png" }
+    from(screenshots) {
+        include("store_icon.png", "store_feature_graphic.png")
+        rename { if (it == "store_icon.png") "icon.png" else "featureGraphic.png" }
+    }
+    into(rootProject.layout.projectDirectory.dir("fastlane/metadata/android/en-US/images"))
 }
