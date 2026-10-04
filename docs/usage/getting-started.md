@@ -2,8 +2,10 @@
 
 ## Install
 
-- **F-Droid:** search for VoxLog once it's in the main repository, or add the developer repository
-  `https://mikejhill.github.io/voxlog/fdroid/repo` in the F-Droid or Droid-ify client.
+- **F-Droid (developer repo):** in the F-Droid or Droid-ify client, add the repository
+  `https://mikejhill.github.io/voxlog/fdroid/repo?fingerprint=ae092aadae4beb401cde1a34763af15833d03e1699e3114f41721cdf14fb4019`
+  (the fingerprint lets the client verify the repository's signature).
+- **F-Droid (main repo):** search for VoxLog once it's been accepted.
 - **Direct:** download the APK from GitHub Releases, or track releases with Obtainium.
 
 All three channels ship the same signed APK, so you can switch between them without reinstalling.
