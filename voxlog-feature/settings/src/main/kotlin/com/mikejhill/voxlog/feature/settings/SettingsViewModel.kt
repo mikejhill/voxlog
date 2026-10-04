@@ -41,7 +41,7 @@ data class SettingsUiState(
     val embeddingModelState: ModelFileState = ModelFileState.Missing,
     val hasApiKey: Boolean = false,
     val availableModels: List<String> = emptyList(),
-    val message: String? = null,
+    val message: SettingsMessage? = null,
 )
 
 /** Reads and writes global settings, model downloads, AI provider configuration, hooks, sync and export. */
@@ -125,13 +125,13 @@ class SettingsViewModel @Inject constructor(
     override fun loadAvailableModels() = launch {
         val client = llmClientFactory.createForModelListing(uiState.value.settings)
         if (client == null) {
-            showMessage("Add an API key (and base URL for custom endpoints) first")
+            showMessage(SettingsMessage.Kind.PROVIDER_NOT_CONFIGURED)
             return@launch
         }
         try {
             transient.update { it.copy(availableModels = client.listModels()) }
         } catch (exception: LlmException) {
-            showMessage(exception.message ?: "Could not load models")
+            showMessage(SettingsMessage.Kind.MODEL_LIST_FAILED, exception.message)
         }
     }
 
@@ -150,7 +150,7 @@ class SettingsViewModel @Inject constructor(
     /** Sets the sync folder chosen with the system folder picker. */
     override fun setSyncFolder(uri: Uri) = launch {
         userFilesRepository.setSyncFolder(uri)
-        showMessage("Sync folder set. Syncing now.")
+        showMessage(SettingsMessage.Kind.SYNC_FOLDER_SET)
     }
 
     /** Stops syncing to the folder. */
@@ -159,16 +159,16 @@ class SettingsViewModel @Inject constructor(
     /** Triggers a sync. */
     override fun syncNow() {
         userFilesRepository.syncNow()
-        showMessage("Sync started")
+        showMessage(SettingsMessage.Kind.SYNC_STARTED)
     }
 
     /** Exports everything to the file chosen with the system file picker. */
     override fun exportTo(uri: Uri) = launch {
         try {
             userFilesRepository.exportTo(uri)
-            showMessage("Export complete")
+            showMessage(SettingsMessage.Kind.EXPORT_COMPLETE)
         } catch (exception: IOException) {
-            showMessage("Export failed: ${exception.message}")
+            showMessage(SettingsMessage.Kind.EXPORT_FAILED, exception.message)
         }
     }
 
@@ -183,7 +183,8 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch { block() }
     }
 
-    private fun showMessage(message: String) = transient.update { it.copy(message = message) }
+    private fun showMessage(kind: SettingsMessage.Kind, detail: String? = null) =
+        transient.update { it.copy(message = SettingsMessage(kind, detail)) }
 
     private fun embeddingState(): ModelFileState {
         val model = ModelCatalog.embeddingModel

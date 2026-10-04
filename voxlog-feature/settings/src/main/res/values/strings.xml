@@ -104,4 +104,10 @@
     <string name="settings_model_downloading">downloading %1$d%%</string>
     <string name="settings_model_ready">ready</string>
     <string name="settings_model_failed">download failed — tap to retry</string>
+    <string name="settings_message_provider_not_configured">Add an API key (and a base URL for custom endpoints) first</string>
+    <string name="settings_message_model_list_failed">Could not load models</string>
+    <string name="settings_message_sync_folder_set">Sync folder set. Syncing now.</string>
+    <string name="settings_message_sync_started">Sync started</string>
+    <string name="settings_message_export_complete">Export complete</string>
+    <string name="settings_message_export_failed">Export failed</string>
 </resources>

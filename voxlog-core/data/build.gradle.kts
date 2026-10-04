@@ -21,4 +21,5 @@ dependencies {
     implementation(libs.kotlinx.serialization.json)
     testImplementation(projects.voxlogCore.testing)
     testImplementation(libs.androidx.work.testing)
+    testImplementation(libs.okhttp.mockwebserver)
 }

@@ -38,6 +38,7 @@ import com.mikejhill.voxlog.core.designsystem.component.CategoryPickerSheet
 import com.mikejhill.voxlog.core.model.ModelCatalog
 import com.mikejhill.voxlog.feature.settings.R
 import com.mikejhill.voxlog.feature.settings.SettingsActions
+import com.mikejhill.voxlog.feature.settings.SettingsMessage
 import com.mikejhill.voxlog.feature.settings.SettingsUiState
 
 /** Global settings, grouped from most to least frequently used. */
@@ -45,8 +46,9 @@ import com.mikejhill.voxlog.feature.settings.SettingsUiState
 @Composable
 fun SettingsScreen(state: SettingsUiState, actions: SettingsActions, navigation: SettingsNavigation, modifier: Modifier = Modifier) {
     val snackbarHostState = remember { SnackbarHostState() }
+    val messageText = state.message?.let { messageText(it) }
     LaunchedEffect(state.message) {
-        state.message?.let {
+        messageText?.let {
             snackbarHostState.showSnackbar(it)
             actions.onMessageShown()
         }
@@ -359,6 +361,21 @@ private fun ModelStateIcon(state: ModelFileState) {
 
 @Composable
 private fun Chevron() = Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, contentDescription = null)
+
+@Composable
+private fun messageText(message: SettingsMessage): String {
+    val text = stringResource(
+        when (message.kind) {
+            SettingsMessage.Kind.PROVIDER_NOT_CONFIGURED -> R.string.settings_message_provider_not_configured
+            SettingsMessage.Kind.MODEL_LIST_FAILED -> R.string.settings_message_model_list_failed
+            SettingsMessage.Kind.SYNC_FOLDER_SET -> R.string.settings_message_sync_folder_set
+            SettingsMessage.Kind.SYNC_STARTED -> R.string.settings_message_sync_started
+            SettingsMessage.Kind.EXPORT_COMPLETE -> R.string.settings_message_export_complete
+            SettingsMessage.Kind.EXPORT_FAILED -> R.string.settings_message_export_failed
+        },
+    )
+    return message.detail?.let { "$text: $it" } ?: text
+}
 
 @Composable
 private fun describe(state: ModelFileState): String = when (state) {
