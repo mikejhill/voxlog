@@ -12,13 +12,10 @@ android {
 
     defaultConfig {
         applicationId = "com.mikejhill.voxlog"
-        versionCode =
-            providers
-                .gradleProperty("voxlog.versionCode")
-                .orElse("1")
-                .get()
-                .toInt()
-        versionName = providers.gradleProperty("voxlog.versionName").orElse("0.1.0").get()
+        // Literal values on purpose: F-Droid's update checker reads them from this file at each tag.
+        // Bump with `python scripts/bump_version.py <major.minor.patch>`; never edit by hand.
+        versionCode = 100
+        versionName = "0.1.0"
     }
 
     signingConfigs {
