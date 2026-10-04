@@ -21,14 +21,14 @@ jobs:
   build-repo:
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    container: registry.gitlab.com/fdroid/fdroidserver:buildserver
     steps:
       - uses: actions/checkout@v5
+      - name: Install fdroidserver
+        run: pipx install fdroidserver
       - name: Download every released APK
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          apt-get update && apt-get install -y gh
           mkdir -p site/fdroid/repo
           gh release list --repo "$GITHUB_REPOSITORY" --limit 100 --json tagName --jq '.[].tagName' |
             while read -r tag; do gh release download "$tag" --repo "$GITHUB_REPOSITORY" --pattern '*.apk' --dir site/fdroid/repo --skip-existing; done
@@ -50,6 +50,7 @@ jobs:
           keypass: ${REPO_KEYSTORE_PASSWORD}
           repo_keyalias: ${REPO_KEY_ALIAS}
           keydname: CN=VoxLog F-Droid repo
+          apksigner: $(ls -d "$ANDROID_HOME"/build-tools/*/ | sort -V | tail -1)apksigner
           EOF
           chmod 600 config.yml keystore.p12
           mkdir -p metadata
