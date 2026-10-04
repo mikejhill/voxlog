@@ -6,6 +6,8 @@ on:
 
 permissions:
   contents: write
+  pages: write
+  id-token: write
 
 jobs:
   release:
@@ -61,3 +63,9 @@ jobs:
           "voxlog-${{ steps.version.outputs.name }}.apk" "voxlog-${{ steps.version.outputs.name }}.apk.sha256"
           --title "VoxLog ${{ steps.version.outputs.name }}"
           --notes-file "fastlane/metadata/android/en-US/changelogs/${{ steps.version.outputs.code }}.txt"
+
+  fdroid-repo:
+    name: Update the self-hosted F-Droid repository
+    needs: release
+    uses: ./.github/workflows/fdroid-repo.yml
+    secrets: inherit

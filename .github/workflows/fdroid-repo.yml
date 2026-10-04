@@ -2,9 +2,10 @@ name: F-Droid repository
 
 # Publishes a self-hosted F-Droid repository on GitHub Pages containing every released APK.
 # Users add https://mikejhill.github.io/voxlog/fdroid/repo in the F-Droid or Droid-ify client.
+# Called by release.yml after each release (releases created with GITHUB_TOKEN can't trigger
+# other workflows), and runnable by hand to rebuild the repository.
 on:
-  release:
-    types: [published]
+  workflow_call:
   workflow_dispatch:
 
 permissions:
