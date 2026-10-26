@@ -2,6 +2,15 @@
 
 Every gate below runs in CI (`.github/workflows/ci.yml`) and must pass before merging.
 
+CodeQL runs separately in `.github/workflows/codeql.yml` for GitHub Actions, C/C++, Python,
+and Java/Kotlin. The Java/Kotlin scan checks out the whisper.cpp submodule recursively,
+uses the same JDK 21 and pinned Android SDK/NDK/CMake setup as CI, and traces a manual
+`./gradlew assemble --no-daemon --no-build-cache --rerun-tasks` build so cached compilation
+cannot bypass extraction. Keep advanced setup enabled: default setup does not
+initialize the native submodule and drops Java/Kotlin after its automatic build fails.
+Verify a successful `/language:java-kotlin` analysis as well as the other three language
+categories before relying on the CodeQL merge gate.
+
 ## Quick reference
 
 | Command | What it checks |
